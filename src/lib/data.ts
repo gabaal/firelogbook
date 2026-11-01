@@ -301,7 +301,7 @@ export async function actionOwner(actionId: string): Promise<{ siteId: string; f
     .innerJoin(schema.sites, eq(schema.sites.id, schema.actions.site_id))
     .where(eq(schema.actions.id, actionId));
 
-  const row = result[0] as { siteId: string; firmId: string } | undefined;
+  const row = (result as any) ? result[0] : undefined;
   return row ?? null;
 }
 
