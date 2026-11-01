@@ -199,11 +199,11 @@ function compose(input: {
 /* Planning                                                            */
 /* ------------------------------------------------------------------ */
 
-export function planSite(
+export async function planSite(
   site: SiteRow,
   weekKey: string,
   fallbackEmail: string,
-): PlannedReminder | null {
+): Promise<PlannedReminder | null> {
   if (site.remind_opt_out) return null;
 
   const statuses = await itemStatuses(site.id);
