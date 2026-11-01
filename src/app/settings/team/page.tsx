@@ -9,7 +9,7 @@ export default async function TeamPage({
   params: Promise<{ id: string }>;
 }) {
   const { firm } = await requireActiveFirm();
-  const members = listMemberships(firm.id);
+  const members = await listMemberships(firm.id);
 
   return (
     <div className="shell" style={{ paddingTop: 20, paddingBottom: 40 }}>
@@ -30,16 +30,16 @@ export default async function TeamPage({
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id}>
+              <tr key={m.m.id}>
                 <td>{m.name || "—"}</td>
                 <td>{m.email}</td>
                 <td>
-                  <span className={`badge ${m.role === "owner" ? "badge-primary" : "badge-muted"}`}>
-                    {m.role}
+                  <span className={`badge ${m.m.role === "owner" ? "badge-primary" : "badge-muted"}`}>
+                    {m.m.role}
                   </span>
                 </td>
                 <td style={{ textAlign: "right", fontSize: 12, color: "var(--ink-3)" }}>
-                  {new Date(m.created_at).toLocaleDateString()}
+                  {new Date(m.m.created_at).toLocaleDateString()}
                 </td>
               </tr>
             ))}
