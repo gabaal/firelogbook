@@ -105,7 +105,8 @@ export async function countSites(firmId: string): Promise<number> {
     .where(eq(schema.sites.firm_id, firmId));
 
   const rows = result as any[];
-  return Number(rows[0]?.count ?? 0);
+  const count = rows[0]?.count;
+  return typeof count === 'number' ? count : Number(count ?? 0);
 }
 
 export async function listSites(firmId: string): Promise<schema.SiteRow[]> {
@@ -302,7 +303,8 @@ export async function actionOwner(actionId: string): Promise<{ siteId: string; f
     .innerJoin(schema.sites, eq(schema.sites.id, schema.actions.site_id))
     .where(eq(schema.actions.id, actionId));
 
-  return result[0] ?? null;
+  const rows = result as any[];
+  return rows[0] ?? null;
 }
 
 export async function insertAction(input: {
