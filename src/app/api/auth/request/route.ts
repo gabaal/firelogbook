@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createLoginToken } from "@/lib/auth";
 import { baseUrl, mailMode, sendMail } from "@/lib/mail";
 import { getDb } from "@/lib/db";
+import { eq, sql } from "drizzle-orm";
+import * as schema from "@/lib/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,12 +19,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Simple throttle: one link per email per minute.
-  const recent = getDb()
-    .prepare(
-      "SELECT COUNT(*) AS n FROM login_tokens WHERE email = ? AND created_at > ?",
-    )
-    .get(email, new Date(Date.now() - 60_000).toISOString()) as { n: number };
-  if (recent.n > 0) {
+  const db = getDb();
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(schema.login_tokens)
+    .where(and(
+      eq(schema.login_tokens.email, email),
+      sql`${schema.login_tokens.created_at} > ${new Date(Date.now() - 60_000).toISOString()}`
+    ))
+    .get();
+  const n = Number(result?.count ?? 0);
+  if (n > 0) {
     return NextResponse.json(
       { error: "A link was just sent. Wait a minute before asking for another." },
       { status: 429 },

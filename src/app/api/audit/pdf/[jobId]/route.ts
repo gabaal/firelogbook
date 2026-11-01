@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ jobId: string }> },
 ) {
   const { jobId } = await params;
-  const job = getPdfJob(jobId);
+  const job = await getPdfJob(jobId);
 
   if (!job) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 });

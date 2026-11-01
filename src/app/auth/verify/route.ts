@@ -16,12 +16,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/signin?error=expired", req.url));
   }
 
-  const email = consumeLoginToken(token);
+  const email = await consumeLoginToken(token);
   if (!email) {
     return NextResponse.redirect(new URL("/signin?error=expired", req.url));
   }
 
-  const { user, firm } = ensureAccount(email);
+  const { user, firm } = await ensureAccount(email);
   const cookieValue = await createSession(user.id, firm.id);
   const destination = countSites(firm.id) === 0 ? "/onboarding" : "/sites";
 

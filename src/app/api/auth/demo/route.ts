@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL("/signin?error=nodemo", req.url));
   }
 
-  const membership = getDb()
-    .prepare("SELECT * FROM memberships WHERE firm_id = ? ORDER BY created_at LIMIT 1")
-    .get(firm.id) as MembershipRow | undefined;
+  const membership = await getDb().query.memberships.findFirst({
+    where: eq(schema.memberships.firm_id, firm.id),
+  });
 
   if (!membership) {
     return NextResponse.redirect(new URL("/signin?error=nodemo", req.url));

@@ -3,6 +3,8 @@ import { getDb, type FirmRow } from "@/lib/db";
 import { updateFirm } from "@/lib/data";
 import { verifyWebhook } from "@/lib/stripe";
 import type { SubscriptionStatus } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import * as schema from "@/lib/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,24 +45,24 @@ function firmFor(event: StripeEvent): FirmRow | null {
     null;
 
   if (firmId) {
-    const firm = db.prepare("SELECT * FROM firms WHERE id = ?").get(firmId) as
-      | FirmRow
-      | undefined;
+    const firm = db.query.firms.findFirst({
+      where: eq(schema.firms.id, firmId),
+    });
     if (firm) return firm ?? null;
   }
 
   const subscriptionId = object.subscription ?? object.id;
   if (subscriptionId) {
-    const firm = db
-      .prepare("SELECT * FROM firms WHERE stripe_subscription_id = ?")
-      .get(subscriptionId) as FirmRow | undefined;
+    const firm = db.query.firms.findFirst({
+      where: eq(schema.firms.stripe_subscription_id, subscriptionId),
+    });
     if (firm) return firm ?? null;
   }
 
   if (object.customer) {
-    const firm = db
-      .prepare("SELECT * FROM firms WHERE stripe_customer_id = ?")
-      .get(object.customer) as FirmRow | undefined;
+    const firm = db.query.firms.findFirst({
+      where: eq(schema.firms.stripe_customer_id, object.customer),
+    });
     if (firm) return firm ?? null;
   }
 

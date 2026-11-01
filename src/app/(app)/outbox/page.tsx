@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireActiveFirm } from "@/lib/auth";
-import { getDb } from "@/lib/data";
+import { getDb } from "@/lib/db";
 import { ArrowLeft, Mail, Send } from "@/components/icons";
 import { revalidatePath } from "next/cache";
+import { desc } from "drizzle-orm";
+import * as schema from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +13,10 @@ export default async function OutboxPage() {
   const { user, firm } = await requireActiveFirm();
   const db = getDb();
 
-  const emails = db.prepare(
-    "SELECT * FROM email_log WHERE firm_id = ? ORDER BY created_at DESC",
-  ).all(firm.id) as any[];
+  const emails = await db.query.email_log.findMany({
+    where: (email, { eq }) => eq(email.firm_id, firm.id),
+    orderBy: [desc(schema.email_log.created_at)],
+  });
 
   return (
     <div className="shell section">
