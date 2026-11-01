@@ -106,6 +106,14 @@ export const invites = pgTable("invites", {
   expires_at: timestamp("expires_at").notNull(),
 });
 
+export const login_tokens = pgTable("login_tokens", {
+  token: text("token").primaryKey(),
+  email: text("email").notNull(),
+  expires_at: timestamp("expires_at").notNull(),
+  created_at: timestamp("created_at").notNull(),
+  used_at: timestamp("used_at"),
+});
+
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
