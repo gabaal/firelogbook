@@ -16,14 +16,14 @@ export default async function CheckPage({
 }) {
   const { id, key } = await params;
   const { firm, user } = await requireActiveFirm();
-  const site = getSite(firm.id, id);
+  const site = await getSite(firm.id, id);
   if (!site) notFound();
 
-  const checklist = getChecklistForSite(site.id);
+  const checklist = await getChecklistForSite(site.id);
   const item = checklist.find((i) => i.key === key);
   if (!item) notFound();
 
-  const last = latestCheckPerItem(site.id).get(item.key) ?? null;
+  const last = (await latestCheckPerItem(site.id)).get(item.key) ?? null;
   const lastSummary = last
     ? `Last recorded ${fmtDateTime(last.performed_at)} by ${last.performed_by}${
         last.note ? ` — “${last.note.slice(0, 160)}”` : ""

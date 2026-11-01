@@ -18,10 +18,10 @@ export default async function LogPage({
   const { id } = await params;
   const { key } = await searchParams;
   const { firm } = await requireActiveFirm();
-  const site = getSite(firm.id, id);
+  const site = await getSite(firm.id, id);
   if (!site) notFound();
 
-  const all = checksForSite(site.id);
+  const all = await checksForSite(site.id);
   const checks = key ? all.filter((c) => c.item_key === key) : all;
 
   const groups = new Map<string, typeof checks>();

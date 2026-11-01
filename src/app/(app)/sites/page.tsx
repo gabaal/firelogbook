@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function SitesPage() {
   // Readable whether or not the subscription is live; writing is gated elsewhere.
   const { firm } = await requireFirm();
-  if (countSites(firm.id) === 0) redirect("/onboarding");
+  if (await countSites(firm.id) === 0) redirect("/onboarding");
 
-  const sites = listSites(firm.id).map((site) => ({
+  const sites = (await listSites(firm.id)).map((site) => ({
     site,
     summary: summaryFor(site.id),
   }));

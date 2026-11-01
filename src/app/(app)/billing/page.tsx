@@ -15,7 +15,7 @@ export default async function BillingPage({
 }) {
   const { firm, user } = await requireFirm();
   const params = await searchParams;
-  const sites = countSites(firm.id);
+  const sites = await countSites(firm.id);
   const status = statusCopy(firm);
   const active = firmIsActive(firm);
   const subscribed = firm.subscription_status === "active";

@@ -19,7 +19,7 @@ export default async function SitePage({
 }) {
   const { id } = await params;
   const { firm } = await requireActiveFirm();
-  const site = getSite(firm.id, id);
+  const site = await getSite(firm.id, id);
   if (!site) notFound();
 
   const statuses = itemStatuses(site.id);
@@ -30,11 +30,11 @@ export default async function SitePage({
     .filter((s) => s.state === "ok" && s.daysUntilDue <= 7)
     .slice(0, 4);
 
-  const actions = actionsForSite(site.id);
+  const actions = await actionsForSite(site.id);
   const openActions = actions.filter((a) => a.status === "open");
   const closedActions = actions.filter((a) => a.status === "closed");
-  const recent = checksForSite(site.id, 8);
-  const totalChecks = checksForSite(site.id).length;
+  const recent = await checksForSite(site.id, 8);
+  const totalChecks = (await checksForSite(site.id)).length;
 
   return (
     <div className="shell section">

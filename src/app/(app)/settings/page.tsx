@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireActiveFirm } from "@/lib/auth";
-import { getDb } from "@/lib/data";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
 import { ArrowLeft, Shield, User, Building, Users } from "@/components/icons";
 import { revalidatePath } from "next/cache";
 
@@ -29,7 +30,10 @@ export default async function SettingsPage() {
             <form action={async (formData) => {
               "use server";
               const name = formData.get("name") as string;
-              getDb().prepare("UPDATE users SET name = ? WHERE id = ?").run(name, user.id);
+              await db.update(schema.users)
+                .set({ name })
+                .where(eq(schema.users.id, user.id))
+                .run();
               revalidatePath("/settings");
             }} className="stack-sm">
               <label className="field">
@@ -67,9 +71,10 @@ export default async function SettingsPage() {
               const reminderDay = parseInt(formData.get("reminderDay") as string);
               const reminderHour = parseInt(formData.get("reminderHour") as string);
 
-              getDb().prepare(
-                "UPDATE firms SET name = ?, reminder_day = ?, reminder_hour = ? WHERE id = ?"
-              ).run(name, reminderDay, reminderHour, firm.id);
+              await db.update(schema.firms)
+                .set({ name, reminder_day: reminderDay, reminder_hour: reminderHour })
+                .where(eq(schema.firms.id, firm.id))
+                .run();
               revalidatePath("/settings");
             }} className="stack-lg" style={{ gap: 16 }}>
               <label className="field">

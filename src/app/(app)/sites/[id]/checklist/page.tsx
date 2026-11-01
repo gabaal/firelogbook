@@ -15,10 +15,10 @@ export default async function ChecklistPage({
 }) {
   const { id: siteId } = await params;
   const { firm } = await requireActiveFirm();
-  const site = getSite(firm.id, siteId);
+  const site = await getSite(firm.id, siteId);
   if (!site) notFound();
 
-  const items = getChecklistForSite(siteId);
+  const items = await getChecklistForSite(siteId);
 
   return (
     <div className="shell section">

@@ -37,7 +37,7 @@ export default async function NewSitePage() {
             return;
           }
 
-          const site = createSite({
+          const site = await createSite({
             firmId: firm.id,
             name,
             address,

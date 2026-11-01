@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const { firm } = await requireActiveFirm();
-  const sites = listSites(firm.id);
+  const sites = await listSites(firm.id);
 
   // Calculate aggregate health for the firm
   const siteSummaries = await Promise.all(

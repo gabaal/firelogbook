@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const { firm } = await requireFirm();
-  if (countSites(firm.id) > 0) redirect("/sites");
+  if (await countSites(firm.id) > 0) redirect("/sites");
 
   const groups = (["daily", "weekly", "monthly", "quarterly", "annual"] as const).map(
     (frequency) => ({

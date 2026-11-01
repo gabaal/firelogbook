@@ -15,10 +15,10 @@ export default async function SentReminderPage({
 }) {
   const { id } = await params;
   const { firm } = await requireFirm();
-  const notification = getNotification(firm.id, id);
+  const notification = await getNotification(firm.id, id);
   if (!notification) notFound();
 
-  const site = getSiteById(notification.site_id);
+  const site = await getSiteById(notification.site_id);
 
   return (
     <div className="shell section" style={{ maxWidth: 720 }}>
