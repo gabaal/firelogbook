@@ -17,7 +17,9 @@ export async function demoFirm(): Promise<schema.FirmRow | null> {
   return await db.query.firms.findFirst({
     where: eq(schema.firms.subscription_status, "demo"),
     limit: 1 as any,
-export async function renameFirm(firmId: string, name: string): Promise<void> {
+  }) ?? null;
+}
+
   await db.update(schema.firms)
     .set({ name })
     .where(eq(schema.firms.id, firmId));
@@ -213,8 +215,9 @@ export async function getNextPdfJob() {
   return await db.query.pdf_jobs.findFirst({
     where: eq(schema.pdf_jobs.status, "queued"),
     limit: 1 as any,
+  });
+}
 
-/* ------------------------------ checks ----------------------------- */
 
 export async function checksForSite(siteId: string, limit?: number): Promise<schema.CheckRow[]> {
   return await db.query.checks.findMany({
