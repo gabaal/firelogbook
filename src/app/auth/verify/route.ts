@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   const { user, firm } = await ensureAccount(email);
   const cookieValue = await createSession(user.id, firm.id);
-  const destination = countSites(firm.id) === 0 ? "/onboarding" : "/sites";
+  const destination = (await countSites(firm.id)) === 0 ? "/onboarding" : "/sites";
 
   const res = NextResponse.redirect(new URL(destination, req.url));
   res.cookies.set(SESSION_COOKIE, cookieValue, {

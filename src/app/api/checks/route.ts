@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
   if (!session) return bad("Sign in first", 401);
   if (!firmIsActive(session.firm)) return bad("Subscription required", 402);
 
-  const site = getSite(session.firm.id, siteId);
+  const site = await getSite(session.firm.id, siteId);
   if (!site) return bad("Unknown site", 404);
 
-  const checklist = getChecklistForSite(siteId);
+  const checklist = await getChecklistForSite(siteId);
   const item = checklist.find(i => i.key === itemKey);
   if (!item) return bad("Unknown check", 422);
   if (!RESULTS.has(result)) return bad("Unknown result", 422);
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const checkId = insertCheck({
+  const checkId = await insertCheck({
     siteId,
     itemKey,
     performedAt: happenedAt,
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   if (result === "fail" && form.get("raiseAction") === "1") {
     const rawDue = String(form.get("actionDue") ?? "");
     const due = rawDue ? new Date(rawDue) : null;
-    actionId = insertAction({
+    actionId = await insertAction({
       siteId,
       checkId,
       title: `${ITEMS_BY_KEY[itemKey].title} failed`,

@@ -26,7 +26,7 @@ export async function GET(
   if (job.status === "completed" && job.file_path) {
     try {
       const pdf = await fs.readFile(job.file_path);
-      const site = getSiteById(job.site_id);
+      const site = await getSiteById(job.site_id);
       const filename = site
         ? `fire-logbook-${slugify(site.name)}.pdf`
         : `audit-pack-${jobId}.pdf`;

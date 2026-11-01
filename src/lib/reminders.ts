@@ -305,6 +305,7 @@ export async function runReminders(options: {
     const fallbackEmail = await ownerEmail(firm.id) ?? "";
     const sites = await listSites(firm.id);
     for (const site of sites) {
+      const plan = planSite(site, weekKey, fallbackEmail);
       if (!plan) continue;
       result.planned += 1;
 

@@ -26,12 +26,12 @@ export async function POST(
     return NextResponse.json({ error: "Describe what was done" }, { status: 422 });
   }
 
-  const owner = actionOwner(id);
+  const owner = await actionOwner(id);
   if (!owner || owner.firmId !== session.firm.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const ok = closeAction(id, note);
+  const ok = await closeAction(id, note);
   if (!ok) return NextResponse.json({ error: "Already closed" }, { status: 409 });
 
   revalidatePath(`/sites/${owner.siteId}`);

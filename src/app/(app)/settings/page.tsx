@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireActiveFirm } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import * as schema from "@/lib/schema";
 import { ArrowLeft, Shield, User, Building, Users } from "@/components/icons";
 import { revalidatePath } from "next/cache";
 
@@ -32,8 +33,7 @@ export default async function SettingsPage() {
               const name = formData.get("name") as string;
               await db.update(schema.users)
                 .set({ name })
-                .where(eq(schema.users.id, user.id))
-                .run();
+                .where(eq(schema.users.id, user.id));
               revalidatePath("/settings");
             }} className="stack-sm">
               <label className="field">
@@ -73,8 +73,7 @@ export default async function SettingsPage() {
 
               await db.update(schema.firms)
                 .set({ name, reminder_day: reminderDay, reminder_hour: reminderHour })
-                .where(eq(schema.firms.id, firm.id))
-                .run();
+                .where(eq(schema.firms.id, firm.id));
               revalidatePath("/settings");
             }} className="stack-lg" style={{ gap: 16 }}>
               <label className="field">

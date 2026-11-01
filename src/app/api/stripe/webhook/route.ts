@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed":
-      updateFirm(firm.id, {
+      await updateFirm(firm.id, {
         subscription_status: "active",
         stripe_customer_id: object.customer ?? firm.stripe_customer_id,
         stripe_subscription_id: object.subscription ?? firm.stripe_subscription_id,
@@ -102,22 +102,20 @@ export async function POST(req: NextRequest) {
 
     case "customer.subscription.created":
     case "customer.subscription.updated": {
-      const status = STATUS_MAP[object.status ?? ""] ?? firm.subscription_// Fix: object.status might be undefined
-        ? STATUS_MAP[object.status!] ?? firm.subscription_status
-        : firm.subscription_status;
-      updateFirm(firm.id, {
+      const status = STATUS_MAP[object.status ?? ""] ?? firm.subscription_status;
+      await updateFirm(firm.id, {
         subscription_status: status,
         stripe_subscription_id: object.id ?? firm.stripe_subscription_id,
         stripe_customer_id: object.customer ?? firm.stripe_customer_id,
         current_period_end: object.current_period_end
-          ? new Date(object.current_period_end * 1000).toISOString()
+          ? new Date(object.current_period_end * 1000)
           : firm.current_period_end,
       });
       break;
     }
 
     case "customer.subscription.deleted":
-      updateFirm(firm.id, {
+      await updateFirm(firm.id, {
         subscription_status: "canceled",
         current_period_end: null,
       });

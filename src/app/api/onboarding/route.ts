@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const { firm } = await requireFirm();
 
-  if (countSites(firm.id) >= 25) {
+  if (await countSites(firm.id) >= 25) {
     return NextResponse.json(
       { error: "That is a lot of sites — talk to us about a multi-site account." },
       { status: 422 },
@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (firmName.length >= 2 && firmName !== firm.name) {
-    renameFirm(firm.id, firmName);
+    await renameFirm(firm.id, firmName);
   }
 
-  const site = createSite({
+  const site = await createSite({
     firmId: firm.id,
     name,
     address,

@@ -33,7 +33,7 @@ export async function GET(
       email: invite.email,
       name: invite.email.split("@")[0],
       created_at: new Date(),
-    }).run();
+    });
   }
 
   // Add membership
@@ -43,9 +43,9 @@ export async function GET(
     user_id: userId,
     role: invite.role,
     created_at: new Date(),
-  }).run();
+  });
 
-  deleteInvite(invite.id);
+  await deleteInvite(invite.id);
 
   // Create session and sign in
   const session = await createSession(userId, invite.firm_id);

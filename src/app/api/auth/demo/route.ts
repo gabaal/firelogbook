@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 /** Opens a session for the seeded demo firm. Never creates accounts. */
 export async function POST(req: NextRequest) {
-  const firm = demoFirm();
+  const firm = await demoFirm();
   if (!// Check if demoFirm is async? No, it's sync in lib/data.ts
     firm) {
     return NextResponse.redirect(new URL("/signin?error=nodemo", req.url));

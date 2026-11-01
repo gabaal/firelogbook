@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { firm, user } = await requireFirm();
   const body = await req.json().catch(() => ({}));
   const interval: PlanInterval = body.interval === "year" ? "year" : "month";
-  const quantity = Math.max(1, countSites(firm.id));
+  const quantity = Math.max(1, await countSites(firm.id));
 
   if (stripeConfigured()) {
     try {
