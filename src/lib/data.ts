@@ -1,47 +1,49 @@
-import { getDb, type ActionRow, type CheckRow, type FirmRow, type SiteRow, type ChecklistItemRow } from "./db";
-export { getDb };
+import { db } from "./db";
+import { eq, asc, desc, or, and, sql } from "drizzle-orm";
+import * as schema from "./schema";
+export { db as getDb };
 export { FREQUENCIES } from "./checklist";
 import { CHECKLIST } from "./checklist";
 
 /* ------------------------------ firms ------------------------------ */
 
-export function getFirm(firmId: string): FirmRow | null {
-  const row = getDb().prepare("SELECT * FROM firms WHERE id = ?").get(firmId) as
-    | FirmRow
-    | undefined;
-  return row ?? null;
+export function getFirm(firmId: string): schema.FirmRow | null {
+  return db.query.firms.findFirst({
+    where: eq(schema.firms.id, firmId),
+  }) ?? null;
 }
 
-export function demoFirm(): FirmRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM firms WHERE subscription_status = 'demo' LIMIT 1")
-    .get() as FirmRow | undefined;
-  return row ?? null;
+export function demoFirm(): schema.FirmRow | null {
+  return db.query.firms.findFirst({
+    where: eq(schema.firms.subscription_status, "demo"),
+    limit: 1,
+  }) ?? null;
 }
 
 export function renameFirm(firmId: string, name: string): void {
-  getDb().prepare("UPDATE firms SET name = ? WHERE id = ?").run(name, firmId);
+  db.update(schema.firms)
+    .set({ name })
+    .where(eq(schema.firms.id, firmId))
+    .run();
 }
 
-export function updateFirm(firmId: string, patch: Partial<FirmRow>): void {
-  const keys = Object.keys(patch);
-  if (keys.length === 0) return;
-  const assignments = keys.map((key) => `${key} = ?`).join(", ");
-  const values = keys.map((key) => patch[key as keyof FirmRow] as string | null);
-  getDb()
-    .prepare(`UPDATE firms SET ${assignments} WHERE id = ?`)
-    .run(...values, firmId);
+export function updateFirm(firmId: string, patch: Partial<schema.FirmRow>): void {
+  if (Object.keys(patch).length === 0) return;
+  db.update(schema.firms)
+    .set(patch)
+    .where(eq(schema.firms.id, firmId))
+    .run();
 }
 
 /* ------------------------------ checklist ----------------------------- */
 
-export function getChecklistForSite(siteId: string): ChecklistItemRow[] {
-  const rows = getDb()
-    .prepare("SELECT * FROM checklist_items WHERE site_id = ? ORDER BY created_at ASC")
-    .all(siteId) as unknown as ChecklistItemRow[];
+export function getChecklistForSite(siteId: string): schema.ChecklistItemRow[] {
+  const rows = db.query.checklist_items.findMany({
+    where: eq(schema.checklist_items.site_id, siteId),
+    orderBy: [asc(schema.checklist_items.created_at)],
+  });
 
   if (rows.length === 0) {
-    // Fallback to defaults if no custom checklist exists, and seed it
     seedChecklistForSite(siteId);
     return getChecklistForSite(siteId);
   }
@@ -50,22 +52,17 @@ export function getChecklistForSite(siteId: string): ChecklistItemRow[] {
 }
 
 export function seedChecklistForSite(siteId: string): void {
-  const stmt = getDb().prepare(
-    `INSERT OR IGNORE INTO checklist_items (id, site_id, key, title, guidance, frequency, ref, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
   for (const item of CHECKLIST) {
-    stmt.run(
-      crypto.randomUUID(),
-      siteId,
-      item.key,
-      item.title,
-      item.guidance,
-      item.frequency,
-      item.ref,
-      new Date().toISOString()
-    );
+    db.insert(schema.checklist_items).values({
+      id: crypto.randomUUID(),
+      site_id: siteId,
+      key: item.key,
+      title: item.title,
+      guidance: item.guidance,
+      frequency: item.frequency,
+      ref: item.ref,
+      created_at: new Date(),
+    }).onConflictDoNothing();
   }
 }
 
@@ -77,95 +74,92 @@ export function addChecklistItem(siteId: string, input: {
 }): string {
   const id = crypto.randomUUID();
   const key = `custom-${crypto.randomUUID().slice(0, 8)}`;
-  getDb()
-    .prepare(
-      `INSERT INTO checklist_items (id, site_id, key, title, guidance, frequency, ref, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      id,
-      siteId,
-      key,
-      input.title,
-      input.guidance,
-      input.frequency,
-      input.ref,
-      new Date().toISOString()
-    );
+  db.insert(schema.checklist_items).values({
+    id,
+    site_id: siteId,
+    key,
+    title: input.title,
+    guidance: input.guidance,
+    frequency: input.frequency,
+    ref: input.ref,
+    created_at: new Date(),
+  });
   return id;
 }
 
-export function updateChecklistItem(id: string, patch: Partial<ChecklistItemRow>): void {
-  const keys = Object.keys(patch);
-  if (keys.length === 0) return;
-  const assignments = keys.map((key) => `${key} = ?`).join(", ");
-  const values = keys.map((key) => patch[key as keyof ChecklistItemRow] as string);
-  getDb()
-    .prepare(`UPDATE checklist_items SET ${assignments} WHERE id = ?`)
-    .run(...values, id);
+export function updateChecklistItem(id: string, patch: Partial<schema.ChecklistItemRow>): void {
+  if (Object.keys(patch).length === 0) return;
+  db.update(schema.checklist_items)
+    .set(patch)
+    .where(eq(schema.checklist_items.id, id))
+    .run();
 }
 
 export function deleteChecklistItem(id: string): void {
-  getDb().prepare("DELETE FROM checklist_items WHERE id = ?").run(id);
+  db.delete(schema.checklist_items)
+    .where(eq(schema.checklist_items.id, id))
+    .run();
 }
 
 /* ------------------------------ sites ------------------------------ */
 
 export function countSites(firmId: string): number {
-  const row = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM sites WHERE firm_id = ?")
-    .get(firmId) as { n: number };
-  return row.n;
+  const result = db.select({ count: sql<number>`count(*)` })
+    .from(schema.sites)
+    .where(eq(schema.sites.firm_id, firmId))
+    .get();
+  return Number(result?.count ?? 0);
 }
 
-export function listSites(firmId: string): SiteRow[] {
-  return getDb()
-    .prepare("SELECT * FROM sites WHERE firm_id = ? ORDER BY name ASC")
-    .all(firmId) as unknown as SiteRow[];
+export function listSites(firmId: string): schema.SiteRow[] {
+  return db.query.sites.findMany({
+    where: eq(schema.sites.firm_id, firmId),
+    orderBy: [asc(schema.sites.name)],
+  });
 }
 
 export function getSiteHealths(firmId: string) {
   const sites = listSites(firmId);
   return sites.map(site => ({
     site,
-    // We only need the high-level health and overdue count for the dashboard
-    // The actual summary logic remains in lib/due.ts to avoid duplication
   }));
 }
 
-/** Scoped lookup: a site is only returned to the firm that owns it. */
-export function getSite(firmId: string, siteId: string): SiteRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM sites WHERE id = ? AND firm_id = ?")
-    .get(siteId, firmId) as SiteRow | undefined;
-  return row ?? null;
+export function getSite(firmId: string, siteId: string): schema.SiteRow | null {
+  return db.query.sites.findFirst({
+    where: and(
+      eq(schema.sites.id, siteId),
+      eq(schema.sites.firm_id, firmId)
+    ),
+  }) ?? null;
 }
 
-export function getSiteById(siteId: string): SiteRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM sites WHERE id = ?")
-    .get(siteId) as SiteRow | undefined;
-  return row ?? null;
+export function getSiteById(siteId: string): schema.SiteRow | null {
+  return db.query.sites.findFirst({
+    where: eq(schema.sites.id, siteId),
+  }) ?? null;
 }
 
 export function setSiteOptOut(siteId: string, optOut: boolean): void {
-  getDb()
-    .prepare("UPDATE sites SET remind_opt_out = ? WHERE id = ?")
-    .run(optOut ? 1 : 0, siteId);
+  db.update(schema.sites)
+    .set({ remind_opt_out: optOut ? 1 : 0 })
+    .where(eq(schema.sites.id, siteId))
+    .run();
 }
 
 export function updateSite(
   firmId: string,
   siteId: string,
-  patch: Partial<SiteRow>,
+  patch: Partial<schema.SiteRow>,
 ): void {
-  const keys = Object.keys(patch);
-  if (keys.length === 0) return;
-  const assignments = keys.map((key) => `${key} = ?`).join(", ");
-  const values = keys.map((key) => patch[key as keyof SiteRow] as string | number);
-  getDb()
-    .prepare(`UPDATE sites SET ${assignments} WHERE id = ? AND firm_id = ?`)
-    .run(...values, siteId, firmId);
+  if (Object.keys(patch).length === 0) return;
+  db.update(schema.sites)
+    .set(patch)
+    .where(and(
+      eq(schema.sites.id, siteId),
+      eq(schema.sites.firm_id, firmId)
+    ))
+    .run();
 }
 
 export function createSite(input: {
@@ -175,8 +169,8 @@ export function createSite(input: {
   postcode: string;
   responsiblePerson: string;
   responsibleEmail?: string;
-}): SiteRow {
-  const site: SiteRow = {
+}): schema.SiteRow {
+  const site = {
     id: crypto.randomUUID(),
     firm_id: input.firmId,
     name: input.name,
@@ -186,23 +180,9 @@ export function createSite(input: {
     responsible_email: input.responsibleEmail ?? "",
     remind_opt_out: 0,
     working_days: "1,2,3,4,5",
-    created_at: new Date().toISOString(),
+    created_at: new Date(),
   };
-  getDb()
-    .prepare(
-      `INSERT INTO sites (id, firm_id, name, address, postcode, responsible_person, responsible_email, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      site.id,
-      site.firm_id,
-      site.name,
-      site.address,
-      site.postcode,
-      site.responsible_person,
-      site.responsible_email,
-      site.created_at,
-    );
+  db.insert(schema.sites).values(site).run();
   return site;
 }
 
@@ -211,17 +191,13 @@ export function insertPdfJob(input: {
   params: string;
 }): string {
   const id = crypto.randomUUID();
-  getDb()
-    .prepare(
-      `INSERT INTO pdf_jobs (id, site_id, params, created_at)
-       VALUES (?, ?, ?, ?)`,
-    )
-    .run(
-      id,
-      input.siteId,
-      input.params,
-      new Date().toISOString(),
-    );
+  db.insert(schema.pdf_jobs).values({
+    id,
+    site_id: input.siteId,
+    params: input.params,
+    status: "queued",
+    created_at: new Date(),
+  }).run();
   return id;
 }
 
@@ -230,58 +206,57 @@ export function updatePdfJob(id: string, patch: Partial<{
   file_path: string | null;
   completed_at: string | null;
 }>): void {
-  const keys = Object.keys(patch);
-  if (keys.length === 0) return;
-  const assignments = keys.map((key) => `${key} = ?`).join(", ");
-  const values = keys.map((key) => patch[key as keyof typeof patch] as string | null);
-  getDb()
-    .prepare(`UPDATE pdf_jobs SET ${assignments} WHERE id = ?`)
-    .run(...values, id);
+  if (Object.keys(patch).length === 0) return;
+  db.update(schema.pdf_jobs)
+    .set(patch)
+    .where(eq(schema.pdf_jobs.id, id))
+    .run();
 }
 
 export function getPdfJob(id: string) {
-  return getDb().prepare("SELECT * FROM pdf_jobs WHERE id = ?").get(id) as any | undefined;
+  return db.query.pdf_jobs.findFirst({
+    where: eq(schema.pdf_jobs.id, id),
+  });
 }
 
 export function getNextPdfJob() {
-  return getDb()
-    .prepare("SELECT * FROM pdf_jobs WHERE status = 'queued' ORDER BY created_at ASC LIMIT 1")
-    .get() as any | undefined;
+  return db.query.pdf_jobs.findFirst({
+    where: eq(schema.pdf_jobs.status, "queued"),
+    limit: 1,
+  });
 }
 
 /* ------------------------------ checks ----------------------------- */
 
-export function checksForSite(siteId: string, limit?: number): CheckRow[] {
-  const sql = limit
-    ? "SELECT * FROM checks WHERE site_id = ? ORDER BY performed_at DESC LIMIT ?"
-    : "SELECT * FROM checks WHERE site_id = ? ORDER BY performed_at DESC";
-  const stmt = getDb().prepare(sql);
-  return (limit ? stmt.all(siteId, limit) : stmt.all(siteId)) as unknown as CheckRow[];
+export function checksForSite(siteId: string, limit?: number): schema.CheckRow[] {
+  return db.query.checks.findMany({
+    where: eq(schema.checks.site_id, siteId),
+    orderBy: [desc(schema.checks.performed_at)],
+    limit: limit,
+  });
 }
 
 export function checksBetween(
   siteId: string,
   fromIso: string,
   toIso: string,
-): CheckRow[] {
-  return getDb()
-    .prepare(
-      `SELECT * FROM checks
-       WHERE site_id = ? AND performed_at >= ? AND performed_at <= ?
-       ORDER BY performed_at ASC`,
-    )
-    .all(siteId, fromIso, toIso) as unknown as CheckRow[];
+): schema.CheckRow[] {
+  return db.query.checks.findMany({
+    where: and(
+      eq(schema.checks.site_id, siteId),
+      sql`${schema.checks.performed_at} >= ${fromIso}`,
+      sql`${schema.checks.performed_at} <= ${toIso}`,
+    ),
+    orderBy: [asc(schema.checks.performed_at)],
+  });
 }
 
-export function latestCheckPerItem(siteId: string): Map<string, CheckRow> {
-  const rows = getDb()
-    .prepare(
-      `SELECT * FROM checks
-       WHERE site_id = ?
-       ORDER BY performed_at DESC`,
-    )
-    .all(siteId) as unknown as CheckRow[];
-  const map = new Map<string, CheckRow>();
+export function latestCheckPerItem(siteId: string): Map<string, schema.CheckRow> {
+  const rows = db.query.checks.findMany({
+    where: eq(schema.checks.site_id, siteId),
+    orderBy: [desc(schema.checks.performed_at)],
+  });
+  const map = new Map<string, schema.CheckRow>();
   for (const row of rows) {
     if (!map.has(row.item_key)) map.set(row.item_key, row);
   }
@@ -298,46 +273,42 @@ export function insertCheck(input: {
   photo: string | null;
 }): string {
   const id = crypto.randomUUID();
-  getDb()
-    .prepare(
-      `INSERT INTO checks (id, site_id, item_key, performed_at, performed_by, result, note, photo, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      id,
-      input.siteId,
-      input.itemKey,
-      input.performedAt,
-      input.performedBy,
-      input.result,
-      input.note,
-      input.photo,
-      new Date().toISOString(),
-    );
+  db.insert(schema.checks).values({
+    id,
+    site_id: input.siteId,
+    item_key: input.itemKey,
+    performed_at: new Date(input.performedAt),
+    performed_by: input.performedBy,
+    result: input.result,
+    note: input.note,
+    photo: input.photo,
+    created_at: new Date(),
+  }).run();
   return id;
 }
 
 /* ------------------------------ actions ---------------------------- */
 
-export function actionsForSite(siteId: string): ActionRow[] {
-  return getDb()
-    .prepare(
-      `SELECT * FROM actions WHERE site_id = ?
-       ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END,
-                COALESCE(due_date, created_at) ASC`,
-    )
-    .all(siteId) as unknown as ActionRow[];
+export function actionsForSite(siteId: string): schema.ActionRow[] {
+  return db.query.actions.findMany({
+    where: eq(schema.actions.site_id, siteId),
+    orderBy: [
+      sql`CASE status WHEN 'open' THEN 0 ELSE 1 END`,
+      sql`COALESCE(due_date, created_at) ASC`,
+    ],
+  });
 }
 
 export function actionOwner(actionId: string): { siteId: string; firmId: string } | null {
-  const row = getDb()
-    .prepare(
-      `SELECT a.site_id AS siteId, s.firm_id AS firmId
-       FROM actions a JOIN sites s ON s.id = a.site_id
-       WHERE a.id = ?`,
-    )
-    .get(actionId) as { siteId: string; firmId: string } | undefined;
-  return row ?? null;
+  const res = db.select({
+    siteId: schema.actions.site_id,
+    firmId: schema.sites.firm_id,
+  })
+    .from(schema.actions)
+    .innerJoin(schema.sites, eq(schema.sites.id, schema.actions.site_id))
+    .where(eq(schema.actions.id, actionId))
+    .get();
+  return res ?? null;
 }
 
 export function insertAction(input: {
@@ -348,31 +319,32 @@ export function insertAction(input: {
   dueDate: string | null;
 }): string {
   const id = crypto.randomUUID();
-  getDb()
-    .prepare(
-      `INSERT INTO actions (id, site_id, check_id, title, detail, due_date, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'open', ?)`,
-    )
-    .run(
-      id,
-      input.siteId,
-      input.checkId,
-      input.title,
-      input.detail,
-      input.dueDate,
-      new Date().toISOString(),
-    );
+  db.insert(schema.actions).values({
+    id,
+    site_id: input.siteId,
+    check_id: input.checkId,
+    title: input.title,
+    detail: input.detail,
+    due_date: input.dueDate ? new Date(input.dueDate) : null,
+    status: "open",
+    created_at: new Date(),
+  }).run();
   return id;
 }
 
 export function closeAction(id: string, note: string): boolean {
-  const result = getDb()
-    .prepare(
-      `UPDATE actions SET status = 'closed', closed_at = ?, closed_note = ?
-       WHERE id = ? AND status = 'open'`,
-    )
-    .run(new Date().toISOString(), note, id);
-  return result.changes > 0;
+  const result = db.update(schema.actions)
+    .set({
+      status: "closed",
+      closed_at: new Date(),
+      closed_note: note,
+    })
+    .where(and(
+      eq(schema.actions.id, id),
+      eq(schema.actions.status, "open")
+    ))
+    .run();
+  return (result as any).rowCount > 0;
 }
 
 /* ------------------------------ email ------------------------------ */
@@ -384,20 +356,15 @@ export function logEmail(input: {
   body: string;
   status: string;
 }): void {
-  getDb()
-    .prepare(
-      `INSERT INTO email_log (id, firm_id, to_addr, subject, body, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      crypto.randomUUID(),
-      input.firmId,
-      input.toAddr,
-      input.subject,
-      input.body,
-      input.status,
-      new Date().toISOString(),
-    );
+  db.insert(schema.email_log).values({
+    id: crypto.randomUUID(),
+    firm_id: input.firmId,
+    to_addr: input.toAddr,
+    subject: input.subject,
+    body: input.body,
+    status: input.status,
+    created_at: new Date(),
+  }).run();
 }
 
 export function insertInvite(input: {
@@ -408,41 +375,38 @@ export function insertInvite(input: {
   expiresAt: string;
 }): string {
   const id = crypto.randomUUID();
-  getDb()
-    .prepare(
-      `INSERT INTO invites (id, firm_id, email, role, token, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      id,
-      input.firmId,
-      input.email,
-      input.role,
-      input.token,
-      new Date().toISOString(),
-      input.expiresAt,
-    );
+  db.insert(schema.invites).values({
+    id,
+    firm_id: input.firmId,
+    email: input.email,
+    role: input.role,
+    token: input.token,
+    created_at: new Date(),
+    expires_at: new Date(input.expiresAt),
+  }).run();
   return id;
 }
 
 export function getInviteByToken(token: string) {
-  return getDb()
-    .prepare("SELECT * FROM invites WHERE token = ?")
-    .get(token) as any | undefined;
+  return db.query.invites.findFirst({
+    where: eq(schema.invites.token, token),
+  });
 }
 
 export function deleteInvite(id: string): void {
-  getDb().prepare("DELETE FROM invites WHERE id = ?").run(id);
+  db.delete(schema.invites)
+    .where(eq(schema.invites.id, id))
+    .run();
 }
 
 export function listMemberships(firmId: string) {
-  return getDb()
-    .prepare(
-      `SELECT m.*, u.email, u.name
-       FROM memberships m
-       JOIN users u ON m.user_id = u.id
-       WHERE m.firm_id = ?
-       ORDER BY m.role ASC, u.name ASC`,
-    )
-    .all(firmId) as any[];
+  return db.select({
+    m: schema.memberships,
+    email: schema.users.email,
+    name: schema.users.name,
+  })
+    .from(schema.memberships)
+    .innerJoin(schema.users, eq(schema.users.id, schema.memberships.user_id))
+    .where(eq(schema.memberships.firm_id, firmId))
+    .orderBy(asc(schema.memberships.role), asc(schema.users.name));
 }

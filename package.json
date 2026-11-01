@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@swc/helpers": "^0.5.23",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.2",
     "react": "19.2.0",
     "react-dom": "19.2.0"
@@ -19,6 +21,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "drizzle-kit": "^0.31.11",
     "typescript": "^5.7.0"
   }
 }
