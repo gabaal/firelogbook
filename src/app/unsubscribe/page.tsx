@@ -12,9 +12,9 @@ export default async function UnsubscribePage({
 }) {
   const { t } = await searchParams;
   const siteId = t ? verifyUnsubscribeToken(t) : null;
-  const site = siteId ? getSiteById(siteId) : null;
+  const site = siteId ? await getSiteById(siteId) : null;
 
-  if (site) setSiteOptOut(site.id, true);
+  if (site) await setSiteOptOut(site.id, true);
 
   return (
     <div className="shell" style={{ maxWidth: 520, paddingTop: 56, paddingBottom: 80 }}>

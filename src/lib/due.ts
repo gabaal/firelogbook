@@ -71,11 +71,11 @@ export function statusForItem(
   };
 }
 
-export function itemStatuses(siteId: string, now = Date.now()): ItemStatus[] {
-  const site = getSite(null as any, siteId); // Simplified lookup for this context
+export async function itemStatuses(siteId: string, now = Date.now()): Promise<ItemStatus[]> {
+  const site = await getSite(null as any, siteId); // Simplified lookup for this context
   const workingDays = site?.working_days ?? "1,2,3,4,5";
-  const latest = latestCheckPerItem(siteId);
-  const checklist = getChecklistForSite(siteId);
+  const latest = await latestCheckPerItem(siteId);
+  const checklist = await getChecklistForSite(siteId);
   return checklist.map((item) =>
     statusForItem(item as CheckItem, latest.get(item.key) ?? null, workingDays, now),
   );
@@ -111,18 +111,19 @@ export interface SiteSummary {
   headline: string;
 }
 
-export function summarise(
+export async function summarise(
   siteId: string,
   statuses: ItemStatus[],
   now = Date.now(),
-): SiteSummary {
+): Promise<SiteSummary> {
   const overdue = statuses.filter((s) => s.state === "overdue").length;
   const never = statuses.filter((s) => s.state === "never").length;
   const due = statuses.filter((s) => s.state === "due").length;
   const ok = statuses.filter((s) => s.state === "ok").length;
 
-  const actions = actionsForSite(siteId).filter((a) => a.status === "open");
-  const overdueActions = actions.filter(
+  const actions = await actionsForSite(siteId);
+  const openActions = actions.filter((a) => a.status === "open");
+  const overdueActions = openActions.filter(
     (a) => a.due_date && new Date(a.due_date).getTime() < now,
   ).length;
 
@@ -152,12 +153,12 @@ export function summarise(
     due,
     never,
     ok,
-    openActions: actions.length,
+    openActions: openActions.length,
     overdueActions,
     headline,
   };
 }
 
-export function summaryFor(siteId: string, now = Date.now()): SiteSummary {
-  return summarise(siteId, itemStatuses(siteId, now), now);
+export async function summaryFor(siteId: string, now = Date.now()): Promise<SiteSummary> {
+  return summarise(siteId, await itemStatuses(siteId, now), now);
 }

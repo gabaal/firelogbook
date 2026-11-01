@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { token } = createLoginToken(email);
+  const { token } = await createLoginToken(email);
   const link = `${baseUrl()}/auth/verify?token=${encodeURIComponent(token)}`;
 
   await sendMail({

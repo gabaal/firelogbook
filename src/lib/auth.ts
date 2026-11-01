@@ -226,7 +226,7 @@ export function verifyShareToken(token: string, siteId: string): boolean {
 }
 
 export async function requireRole(role: "owner" | "admin" | "member", session: AuthContext) {
-  const roles = {
+  const roles: Record<string, number> = {
     owner: 3,
     admin: 2,
     member: 1,

@@ -17,7 +17,7 @@ export default async function SignInPage({
     const email = formData.get("email") as string;
     if (!email) return;
 
-    const { token } = createLoginToken(email);
+    const { token } = await createLoginToken(email);
     // In a real app, we'd send an email here.
     // For this build, we'll redirect directly to the API route to handle cookies.
     redirect(`/api/auth/magic?token=${token}`);
