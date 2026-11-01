@@ -14,6 +14,7 @@ export const firms = pgTable("firms", {
   reminder_day: integer("reminder_day").notNull().default(1),
   reminder_hour: integer("reminder_hour").notNull().default(7),
 });
+export type FirmRow = typeof firms.$inferSelect;
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -21,6 +22,7 @@ export const users = pgTable("users", {
   name: text("name").notNull().default(""),
   created_at: timestamp("created_at").notNull(),
 });
+export type UserRow = typeof users.$inferSelect;
 
 export const memberships = pgTable("memberships", {
   id: text("id").primaryKey(),
@@ -29,6 +31,7 @@ export const memberships = pgTable("memberships", {
   role: text("role").notNull().default("owner"),
   created_at: timestamp("created_at").notNull(),
 });
+export type MembershipRow = typeof memberships.$inferSelect;
 
 export const sites = pgTable("sites", {
   id: text("id").primaryKey(),
@@ -42,6 +45,7 @@ export const sites = pgTable("sites", {
   working_days: text("working_days").notNull().default("1,2,3,4,5"),
   created_at: timestamp("created_at").notNull(),
 });
+export type SiteRow = typeof sites.$inferSelect;
 
 export const checklist_items = pgTable("checklist_items", {
   id: text("id").primaryKey(),
@@ -53,6 +57,7 @@ export const checklist_items = pgTable("checklist_items", {
   ref: text("ref").notNull(),
   created_at: timestamp("created_at").notNull(),
 });
+export type ChecklistItemRow = typeof checklist_items.$inferSelect;
 
 export const checks = pgTable("checks", {
   id: text("id").primaryKey(),
@@ -65,6 +70,7 @@ export const checks = pgTable("checks", {
   photo: text("photo"),
   created_at: timestamp("created_at").notNull(),
 });
+export type CheckRow = typeof checks.$inferSelect;
 
 export const actions = pgTable("actions", {
   id: text("id").primaryKey(),
@@ -78,6 +84,7 @@ export const actions = pgTable("actions", {
   closed_at: timestamp("closed_at"),
   closed_note: text("closed_note"),
 });
+export type ActionRow = typeof actions.$inferSelect;
 
 export const email_log = pgTable("email_log", {
   id: text("id").primaryKey(),

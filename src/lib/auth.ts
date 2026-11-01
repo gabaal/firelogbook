@@ -11,6 +11,8 @@ import {
 } from "./db";
 import { firmIsActive } from "./billing";
 import { signPayload, signToken, verifyPayload, verifyToken } from "./tokens";
+import { eq, and } from "drizzle-orm";
+import * as schema from "./schema";
 
 export const SESSION_COOKIE = "flb_session";
 const SESSION_DAYS = 30;
@@ -27,25 +29,15 @@ export interface AuthContext {
 /* ------------------------------------------------------------------ */
 
 export async function createSession(userId: string, firmId: string): Promise<string> {
+  const db = getDb();
   const session: SessionRow = {
     id: randomUUID(),
     user_id: userId,
     firm_id: firmId,
-    expires_at: new Date(Date.now() + SESSION_DAYS * 86_400_000).toISOString(),
-    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + SESSION_DAYS * 86_400_000),
+    created_at: new Date(),
   };
-  getDb()
-    .prepare(
-      `INSERT INTO sessions (id, user_id, firm_id, expires_at, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(
-      session.id,
-      session.user_id,
-      session.firm_id,
-      session.expires_at,
-      session.created_at,
-    );
+  await db.insert(schema.sessions).values(session).run();
   return `${session.id}.${signPayload(session.id)}`;
 }
 
@@ -56,7 +48,10 @@ export function clearSessionCookieValue(): string {
 export function endSession(cookieValue: string | undefined): void {
   if (!cookieValue) return;
   const [id] = cookieValue.split(".");
-  if (id) getDb().prepare("DELETE FROM sessions WHERE id = ?").run(id);
+  if (id) {
+    const db = getDb();
+    db.delete(schema.sessions).where(eq(schema.sessions.id, id)).run();
+  }
 }
 
 function readSessionCookie(value: string | undefined): string | null {
@@ -73,24 +68,27 @@ export async function getSession(): Promise<AuthContext | null> {
   if (!id) return null;
 
   const db = getDb();
-  const session = db
-    .prepare("SELECT * FROM sessions WHERE id = ?")
-    .get(id) as SessionRow | undefined;
+  const session = await db.query.sessions.findFirst({
+    where: eq(schema.sessions.id, id),
+  });
   if (!session) return null;
-  if (new Date(session.expires_at).getTime() < Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
+  if (session.expires_at.getTime() < Date.now()) {
+    db.delete(schema.sessions).where(eq(schema.sessions.id, id)).run();
     return null;
   }
 
-  const user = db
-    .prepare("SELECT * FROM users WHERE id = ?")
-    .get(session.user_id) as UserRow | undefined;
-  const firm = db
-    .prepare("SELECT * FROM firms WHERE id = ?")
-    .get(session.firm_id) as FirmRow | undefined;
-  const membership = db
-    .prepare("SELECT * FROM memberships WHERE user_id = ? AND firm_id = ?")
-    .get(session.user_id, session.firm_id) as MembershipRow | undefined;
+  const user = await db.query.users.findFirst({
+    where: eq(schema.users.id, session.user_id),
+  });
+  const firm = await db.query.firms.findFirst({
+    where: eq(schema.firms.id, session.firm_id),
+  });
+  const membership = await db.query.memberships.findFirst({
+    where: and(
+      eq(schema.memberships.user_id, session.user_id),
+      eq(schema.memberships.firm_id, session.firm_id)
+    ),
+  });
 
   if (!user || !firm || !membership) return null;
   return { user, firm, membership, session };
@@ -115,32 +113,32 @@ export async function requireActiveFirm(): Promise<AuthContext> {
 /* ------------------------------------------------------------------ */
 
 export function createLoginToken(email: string): { token: string; expires: Date } {
+  const db = getDb();
   const token = randomBytes(24).toString("base64url");
   const expires = new Date(Date.now() + 20 * 60_000);
-  getDb()
-    .prepare(
-      `INSERT INTO login_tokens (token, email, expires_at, created_at)
-       VALUES (?, ?, ?, ?)`,
-    )
-    .run(token, email.toLowerCase().trim(), expires.toISOString(), new Date().toISOString());
+  db.insert(schema.login_tokens).values({
+    token,
+    email: email.toLowerCase().trim(),
+    expires_at: expires,
+    created_at: new Date(),
+  }).run();
   return { token, expires };
 }
 
-export function consumeLoginToken(token: string): string | null {
+export async function consumeLoginToken(token: string): Promise<string | null> {
   const db = getDb();
-  const row = db
-    .prepare("SELECT * FROM login_tokens WHERE token = ?")
-    .get(token) as
-    | { token: string; email: string; expires_at: string; used_at: string | null }
-    | undefined;
+  const row = await db.query.login_tokens.findFirst({
+    where: eq(schema.login_tokens.token, token),
+  });
 
   if (!row || row.used_at) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  if (row.expires_at.getTime() < Date.now()) return null;
 
-  db.prepare("UPDATE login_tokens SET used_at = ? WHERE token = ?").run(
-    new Date().toISOString(),
-    token,
-  );
+  await db.update(schema.login_tokens)
+    .set({ used_at: new Date() })
+    .where(eq(schema.login_tokens.token, token))
+    .run();
+
   return row.email;
 }
 
@@ -152,26 +150,26 @@ function firmNameFromEmail(email: string): string {
 }
 
 /** Find or create the user, their firm and the membership. */
-export function ensureAccount(email: string): {
+export async function ensureAccount(email: string): Promise<{
   user: UserRow;
   firm: FirmRow;
   role: MembershipRow["role"];
   created: boolean;
-} {
+}> {
   const db = getDb();
   const normalised = email.toLowerCase().trim();
-  const existing = db
-    .prepare("SELECT * FROM users WHERE email = ?")
-    .get(normalised) as UserRow | undefined;
+  const existing = await db.query.users.findFirst({
+    where: eq(schema.users.email, normalised),
+  });
 
   if (existing) {
-    const membership = db
-      .prepare("SELECT * FROM memberships WHERE user_id = ? ORDER BY created_at LIMIT 1")
-      .get(existing.id) as MembershipRow | undefined;
+    const membership = await db.query.memberships.findFirst({
+      where: eq(schema.memberships.user_id, existing.id),
+    });
     const firm = membership
-      ? (db
-          .prepare("SELECT * FROM firms WHERE id = ?")
-          .get(membership.firm_id) as FirmRow | undefined)
+      ? await db.query.firms.findFirst({
+          where: eq(schema.firms.id, membership.firm_id),
+        })
       : undefined;
     if (membership && firm) {
       return { user: existing, firm, role: membership.role, created: false };
@@ -184,15 +182,15 @@ export function ensureAccount(email: string): {
     id: randomUUID(),
     email: normalised,
     name: "",
-    created_at: now.toISOString(),
+    created_at: now,
   };
   const firm: FirmRow = {
     id: randomUUID(),
     name: firmNameFromEmail(normalised),
-    created_at: now.toISOString(),
+    created_at: now,
     subscription_status: "trialing",
     plan_interval: null,
-    trial_ends_at: new Date(now.getTime() + 14 * 86_400_000).toISOString(),
+    trial_ends_at: new Date(now.getTime() + 14 * 86_400_000),
     stripe_customer_id: null,
     stripe_subscription_id: null,
     current_period_end: null,
@@ -201,16 +199,15 @@ export function ensureAccount(email: string): {
     reminder_hour: 7,
   };
 
-  db.prepare(
-    "INSERT INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)",
-  ).run(user.id, user.email, user.name, user.created_at);
-  db.prepare(
-    `INSERT INTO firms (id, name, created_at, subscription_status, trial_ends_at)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(firm.id, firm.name, firm.created_at, firm.subscription_status, firm.trial_ends_at);
-  db.prepare(
-    "INSERT INTO memberships (id, user_id, firm_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
-  ).run(randomUUID(), user.id, firm.id, "owner", user.created_at);
+  await db.insert(schema.users).values(user).run();
+  await db.insert(schema.firms).values(firm).run();
+  await db.insert(schema.memberships).values({
+    id: randomUUID(),
+    user_id: user.id,
+    firm_id: firm.id,
+    role: "owner",
+    created_at: now,
+  }).run();
 
   return { user, firm, role: "owner", created: true };
 }
