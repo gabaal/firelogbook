@@ -33,6 +33,7 @@ export async function GET(
       },
     });
   } catch {
-    return new NextResponse("Not found", { status: 404 });
+    // In production (Vercel), local files don't exist.
+    return new NextResponse("Photo not available in production", { status: 404 });
   }
 }

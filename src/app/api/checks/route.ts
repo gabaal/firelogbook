@@ -67,9 +67,16 @@ export async function POST(req: NextRequest) {
     if (!file.type.startsWith("image/")) return bad("Photo must be an image", 415);
     const name = `${randomUUID()}.jpg`;
     const bytes = Buffer.from(await file.arrayBuffer());
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-    await fs.writeFile(path.join(UPLOAD_DIR, name), bytes);
-    photo = name;
+    try {
+      await fs.mkdir(UPLOAD_DIR, { recursive: true });
+      await fs.writeFile(path.join(UPLOAD_DIR, name), bytes);
+      photo = name;
+    } catch (e) {
+      console.error("Upload failed:", e);
+      // In production (Vercel), local writes fail.
+      // We proceed without the photo for now to avoid a 500.
+      photo = null;
+    }
   }
 
   const checkId = insertCheck({

@@ -9,6 +9,9 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL);
 export const db = drizzle(sql, { schema });
 
+export const DATA_DIR = "/tmp/data";
+export const UPLOAD_DIR = "/tmp/uploads";
+
 export function getDb() {
   return db;
 }

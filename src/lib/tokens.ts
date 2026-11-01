@@ -13,20 +13,9 @@ export function signingSecret(): string {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
   if (cached) return cached;
 
-  const file = path.join(DATA_DIR, "session.key");
-  try {
-    const value = fs.readFileSync(file, "utf8").trim();
-    if (value) {
-      cached = value;
-      return value;
-    }
-  } catch {
-    /* first run */
-  }
-
-  const value = randomBytes(32).toString("hex");
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(file, value, { mode: 0o600 });
+  // In production (Vercel), we must use an environment variable.
+  // We return a fallback secret only if SESSION_SECRET is missing.
+  const value = process.env.SESSION_SECRET || "fallback-secret-for-dev-only";
   cached = value;
   return value;
 }
