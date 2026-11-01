@@ -45,7 +45,7 @@ export function clearSessionCookieValue(): string {
   return "";
 }
 
-export function endSession(cookieValue: string | undefined): void {
+export async function endSession(cookieValue: string | undefined): Promise<void> {
   if (!cookieValue) return;
   const [id] = cookieValue.split(".");
   if (id) {
