@@ -37,7 +37,7 @@ export async function createSession(userId: string, firmId: string): Promise<str
     expires_at: new Date(Date.now() + SESSION_DAYS * 86_400_000),
     created_at: new Date(),
   };
-  await db.insert(schema.sessions).values(session).run();
+  await db.insert(schema.sessions).values(session);
   return `${session.id}.${signPayload(session.id)}`;
 }
 
@@ -50,7 +50,7 @@ export function endSession(cookieValue: string | undefined): void {
   const [id] = cookieValue.split(".");
   if (id) {
     const db = getDb();
-    db.delete(schema.sessions).where(eq(schema.sessions.id, id)).run();
+    await db.delete(schema.sessions).where(eq(schema.sessions.id, id));
   }
 }
 
@@ -73,7 +73,7 @@ export async function getSession(): Promise<AuthContext | null> {
   });
   if (!session) return null;
   if (session.expires_at.getTime() < Date.now()) {
-    db.delete(schema.sessions).where(eq(schema.sessions.id, id)).run();
+    await db.delete(schema.sessions).where(eq(schema.sessions.id, id));
     return null;
   }
 
@@ -112,16 +112,16 @@ export async function requireActiveFirm(): Promise<AuthContext> {
 /* Magic links                                                         */
 /* ------------------------------------------------------------------ */
 
-export function createLoginToken(email: string): { token: string; expires: Date } {
+export async function createLoginToken(email: string): Promise<{ token: string; expires: Date }> {
   const db = getDb();
   const token = randomBytes(24).toString("base64url");
   const expires = new Date(Date.now() + 20 * 60_000);
-  db.insert(schema.login_tokens).values({
+  await db.insert(schema.login_tokens).values({
     token,
     email: email.toLowerCase().trim(),
     expires_at: expires,
     created_at: new Date(),
-  }).run();
+  });
   return { token, expires };
 }
 
@@ -136,8 +136,7 @@ export async function consumeLoginToken(token: string): Promise<string | null> {
 
   await db.update(schema.login_tokens)
     .set({ used_at: new Date() })
-    .where(eq(schema.login_tokens.token, token))
-    .run();
+    .where(eq(schema.login_tokens.token, token));
 
   return row.email;
 }
@@ -199,15 +198,15 @@ export async function ensureAccount(email: string): Promise<{
     reminder_hour: 7,
   };
 
-  await db.insert(schema.users).values(user).run();
-  await db.insert(schema.firms).values(firm).run();
+  await db.insert(schema.users).values(user);
+  await db.insert(schema.firms).values(firm);
   await db.insert(schema.memberships).values({
     id: randomUUID(),
     user_id: user.id,
     firm_id: firm.id,
     role: "owner",
     created_at: now,
-  }).run();
+  });
 
   return { user, firm, role: "owner", created: true };
 }

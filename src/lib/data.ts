@@ -23,16 +23,14 @@ export async function demoFirm(): Promise<schema.FirmRow | null> {
 export async function renameFirm(firmId: string, name: string): Promise<void> {
   await db.update(schema.firms)
     .set({ name })
-    .where(eq(schema.firms.id, firmId))
-    .run();
+    .where(eq(schema.firms.id, firmId));
 }
 
 export async function updateFirm(firmId: string, patch: Partial<schema.FirmRow>): Promise<void> {
   if (Object.keys(patch).length === 0) return;
   await db.update(schema.firms)
     .set(patch)
-    .where(eq(schema.firms.id, firmId))
-    .run();
+    .where(eq(schema.firms.id, firmId));
 }
 
 /* ------------------------------ checklist ----------------------------- */
@@ -91,14 +89,12 @@ export async function updateChecklistItem(id: string, patch: Partial<schema.Chec
   if (Object.keys(patch).length === 0) return;
   await db.update(schema.checklist_items)
     .set(patch)
-    .where(eq(schema.checklist_items.id, id))
-    .run();
+    .where(eq(schema.checklist_items.id, id));
 }
 
 export async function deleteChecklistItem(id: string): Promise<void> {
   await db.delete(schema.checklist_items)
-    .where(eq(schema.checklist_items.id, id))
-    .run();
+    .where(eq(schema.checklist_items.id, id));
 }
 
 /* ------------------------------ sites ------------------------------ */
@@ -143,8 +139,7 @@ export async function getSiteById(siteId: string): Promise<schema.SiteRow | null
 export async function setSiteOptOut(siteId: string, optOut: boolean): Promise<void> {
   await db.update(schema.sites)
     .set({ remind_opt_out: optOut ? 1 : 0 })
-    .where(eq(schema.sites.id, siteId))
-    .run();
+    .where(eq(schema.sites.id, siteId));
 }
 
 export async function updateSite(
@@ -158,8 +153,7 @@ export async function updateSite(
     .where(and(
       eq(schema.sites.id, siteId),
       eq(schema.sites.firm_id, firmId)
-    ))
-    .run();
+    ));
 }
 
 export async function createSite(input: {
@@ -182,7 +176,7 @@ export async function createSite(input: {
     working_days: "1,2,3,4,5",
     created_at: new Date(),
   };
-  await db.insert(schema.sites).values(site).run();
+  await db.insert(schema.sites).values(site);
   return site;
 }
 
@@ -197,7 +191,7 @@ export async function insertPdfJob(input: {
     params: input.params,
     status: "queued",
     created_at: new Date(),
-  }).run();
+  });
   return id;
 }
 
@@ -209,8 +203,7 @@ export async function updatePdfJob(id: string, patch: Partial<{
   if (Object.keys(patch).length === 0) return;
   await db.update(schema.pdf_jobs)
     .set(patch)
-    .where(eq(schema.pdf_jobs.id, id))
-    .run();
+    .where(eq(schema.pdf_jobs.id, id));
 }
 
 export async function getPdfJob(id: string) {
@@ -283,7 +276,7 @@ export async function insertCheck(input: {
     note: input.note,
     photo: input.photo,
     created_at: new Date(),
-  }).run();
+  });
   return id;
 }
 
@@ -328,7 +321,7 @@ export async function insertAction(input: {
     due_date: input.dueDate ? new Date(input.dueDate) : null,
     status: "open",
     created_at: new Date(),
-  }).run();
+  });
   return id;
 }
 
@@ -342,8 +335,7 @@ export async function closeAction(id: string, note: string): Promise<boolean> {
     .where(and(
       eq(schema.actions.id, id),
       eq(schema.actions.status, "open")
-    ))
-    .run();
+    ));
   return (result as any).rowCount > 0;
 }
 
@@ -364,7 +356,7 @@ export async function logEmail(input: {
     body: input.body,
     status: input.status,
     created_at: new Date(),
-  }).run();
+  });
 }
 
 export async function insertInvite(input: {
@@ -383,7 +375,7 @@ export async function insertInvite(input: {
     token: input.token,
     created_at: new Date(),
     expires_at: new Date(input.expiresAt),
-  }).run();
+  });
   return id;
 }
 
@@ -395,8 +387,7 @@ export async function getInviteByToken(token: string) {
 
 export async function deleteInvite(id: string): Promise<void> {
   await db.delete(schema.invites)
-    .where(eq(schema.invites.id, id))
-    .run();
+    .where(eq(schema.invites.id, id));
 }
 
 export async function listMemberships(firmId: string) {

@@ -303,8 +303,8 @@ export async function runReminders(options: {
     }
 
     const fallbackEmail = await ownerEmail(firm.id) ?? "";
-    for (const site of listSites(firm.id)) {
-      const plan = planSite(site, weekKey, fallbackEmail);
+    const sites = await listSites(firm.id);
+    for (const site of sites) {
       if (!plan) continue;
       result.planned += 1;
 
@@ -332,7 +332,7 @@ export async function runReminders(options: {
         channel: process.env.RESEND_API_KEY ? "email" : "outbox",
         status: "pending",
         created_at: new Date(),
-      }).run();
+      });
 
       // Drizzle's .run() for inserts doesn't return "changes" in the same way as SQLite
       // We'll assume success if no error was thrown.
@@ -344,8 +344,7 @@ export async function runReminders(options: {
         });
         await db.update(schema.notifications)
           .set({ status: mode === "email" ? "sent" : "outbox" })
-          .where(eq(schema.notifications.id, id))
-          .run();
+          .where(eq(schema.notifications.id, id));
         result.sent += 1;
         result.items.push({
           site: site.name,
@@ -355,7 +354,7 @@ export async function runReminders(options: {
           subject: plan.subject,
         });
       } catch (err) {
-        await db.delete(schema.notifications).where(eq(schema.notifications.id, id)).run();
+        await db.delete(schema.notifications).where(eq(schema.notifications.id, id));
         result.failed += 1;
         result.items.push({
           site: site.name,
