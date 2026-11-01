@@ -35,7 +35,7 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   paused: "canceled",
 };
 
-function firmFor(event: StripeEvent): FirmRow | null {
+async function firmFor(event: StripeEvent): Promise<FirmRow | null> {
   const object = event.data.object;
   const db = getDb();
 
@@ -45,25 +45,25 @@ function firmFor(event: StripeEvent): FirmRow | null {
     null;
 
   if (firmId) {
-    const firm = db.query.firms.findFirst({
+    const firm = await db.query.firms.findFirst({
       where: eq(schema.firms.id, firmId),
     });
-    if (firm) return firm ?? null;
+    if (firm) return firm;
   }
 
   const subscriptionId = object.subscription ?? object.id;
   if (subscriptionId) {
-    const firm = db.query.firms.findFirst({
+    const firm = await db.query.firms.findFirst({
       where: eq(schema.firms.stripe_subscription_id, subscriptionId),
     });
-    if (firm) return firm ?? null;
+    if (firm) return firm;
   }
 
   if (object.customer) {
-    const firm = db.query.firms.findFirst({
+    const firm = await db.query.firms.findFirst({
       where: eq(schema.firms.stripe_customer_id, object.customer),
     });
-    if (firm) return firm ?? null;
+    if (firm) return firm;
   }
 
   return null;
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const firm = firmFor(event);
+  const firm = await firmFor(event);
   if (!firm) {
     // Acknowledge so Stripe stops retrying events we cannot place.
     return NextResponse.json({ received: true, matched: false });
@@ -102,7 +102,9 @@ export async function POST(req: NextRequest) {
 
     case "customer.subscription.created":
     case "customer.subscription.updated": {
-      const status = STATUS_MAP[object.status ?? ""] ?? firm.subscription_status;
+      const status = STATUS_MAP[object.status ?? ""] ?? firm.subscription_// Fix: object.status might be undefined
+        ? STATUS_MAP[object.status!] ?? firm.subscription_status
+        : firm.subscription_status;
       updateFirm(firm.id, {
         subscription_status: status,
         stripe_subscription_id: object.id ?? firm.stripe_subscription_id,

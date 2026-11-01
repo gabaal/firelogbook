@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, createSession } from "@/lib/auth";
 import { demoFirm } from "@/lib/data";
-import { getDb, type MembershipRow } from "@/lib/db";
+import { getDb } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import * as schema from "@/lib/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,11 +11,13 @@ export const dynamic = "force-dynamic";
 /** Opens a session for the seeded demo firm. Never creates accounts. */
 export async function POST(req: NextRequest) {
   const firm = demoFirm();
-  if (!firm) {
+  if (!// Check if demoFirm is async? No, it's sync in lib/data.ts
+    firm) {
     return NextResponse.redirect(new URL("/signin?error=nodemo", req.url));
   }
 
-  const membership = await getDb().query.memberships.findFirst({
+  const db = getDb();
+  const membership = await db.query.memberships.findFirst({
     where: eq(schema.memberships.firm_id, firm.id),
   });
 
