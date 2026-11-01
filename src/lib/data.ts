@@ -16,7 +16,7 @@ export async function getFirm(firmId: string): Promise<schema.FirmRow | null> {
 export async function demoFirm(): Promise<schema.FirmRow | null> {
   return await db.query.firms.findFirst({
     where: eq(schema.firms.subscription_status, "demo"),
-    limit: 1 as any,
+    limit: 1 as never,
   }) ?? null;
 }
 
@@ -215,7 +215,7 @@ export async function getPdfJob(id: string) {
 export async function getNextPdfJob() {
   return await db.query.pdf_jobs.findFirst({
     where: eq(schema.pdf_jobs.status, "queued"),
-    limit: 1 as any,
+    limit: 1 as never,
   });
 }
 
