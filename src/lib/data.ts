@@ -102,9 +102,10 @@ export async function deleteChecklistItem(id: string): Promise<void> {
 export async function countSites(firmId: string): Promise<number> {
   const result = await db.select({ count: sql<number>`count(*)` })
     .from(schema.sites)
-    .where(eq(schema.sites.firm_id, firmId))
-    .then(res => res[0]);
-  return Number(result?.count ?? 0);
+    .where(eq(schema.sites.firm_id, firmId));
+
+  const rows = result as any[];
+  return Number(rows[0]?.count ?? 0);
 }
 
 export async function listSites(firmId: string): Promise<schema.SiteRow[]> {
@@ -293,15 +294,15 @@ export async function actionsForSite(siteId: string): Promise<schema.ActionRow[]
 }
 
 export async function actionOwner(actionId: string): Promise<{ siteId: string; firmId: string } | null> {
-  const res = await db.select({
+  const result = await db.select({
     siteId: schema.actions.site_id,
     firmId: schema.sites.firm_id,
   })
     .from(schema.actions)
     .innerJoin(schema.sites, eq(schema.sites.id, schema.actions.site_id))
-    .where(eq(schema.actions.id, actionId))
-    .then(res => res[0]);
-  return res ?? null;
+    .where(eq(schema.actions.id, actionId));
+
+  return result[0] ?? null;
 }
 
 export async function insertAction(input: {
