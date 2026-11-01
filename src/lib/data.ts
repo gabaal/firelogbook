@@ -20,6 +20,7 @@ export async function demoFirm(): Promise<schema.FirmRow | null> {
   }) ?? null;
 }
 
+export async function renameFirm(firmId: string, name: string): Promise<void> {
   await db.update(schema.firms)
     .set({ name })
     .where(eq(schema.firms.id, firmId));
