@@ -95,7 +95,7 @@ export function addChecklistItem(siteId: string, input: {
   return id;
 }
 
-export function updateChecklistItem(id: string, patch: Partial<CheckListItemRow>): void {
+export function updateChecklistItem(id: string, patch: Partial<ChecklistItemRow>): void {
   const keys = Object.keys(patch);
   if (keys.length === 0) return;
   const assignments = keys.map((key) => `${key} = ?`).join(", ");
@@ -185,6 +185,7 @@ export function createSite(input: {
     responsible_person: input.responsiblePerson,
     responsible_email: input.responsibleEmail ?? "",
     remind_opt_out: 0,
+    working_days: 5,
     created_at: new Date().toISOString(),
   };
   getDb()

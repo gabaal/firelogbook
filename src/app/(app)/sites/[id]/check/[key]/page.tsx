@@ -46,7 +46,7 @@ export default async function CheckPage({
         title={item.title}
         guidance={item.guidance}
         reference={item.ref}
-        frequencyLabel={FREQUENCIES[item.frequency].label}
+        frequencyLabel={FREQUENCIES[item.frequency as keyof typeof FREQUENCIES].label}
         lastSummary={lastSummary}
         userName={user.name}
       />

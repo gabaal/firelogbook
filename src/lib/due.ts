@@ -77,7 +77,7 @@ export function itemStatuses(siteId: string, now = Date.now()): ItemStatus[] {
   const latest = latestCheckPerItem(siteId);
   const checklist = getChecklistForSite(siteId);
   return checklist.map((item) =>
-    statusForItem(item, latest.get(item.key) ?? null, workingDays, now),
+    statusForItem(item as CheckItem, latest.get(item.key) ?? null, workingDays, now),
   );
 }
 
