@@ -141,7 +141,7 @@ export default async function AuditPage({
         {shared ? (
           <span className="row small muted" style={{ gap: 6 }}>
             <Download size={14} /> Shared logbook · {site.name}
-          </span}
+          </span>
         ) : (
           <Link href={`/sites/${site.id}`} className="row small muted" style={{ gap: 5 }}>
             <ArrowLeft size={15} /> {site.name}
