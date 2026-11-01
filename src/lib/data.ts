@@ -100,13 +100,11 @@ export async function deleteChecklistItem(id: string): Promise<void> {
 /* ------------------------------ sites ------------------------------ */
 
 export async function countSites(firmId: string): Promise<number> {
-  const result = await db.select({ count: sql`count(*)` })
+  const [result] = await db.select({ count: sql`count(*)` })
     .from(schema.sites)
     .where(eq(schema.sites.firm_id, firmId));
 
-  const rows = result as any;
-  const count = rows[0]?.count;
-  return typeof count === 'number' ? count : Number(count ?? 0);
+  return Number(result?.count ?? 0);
 }
 
 export async function listSites(firmId: string): Promise<schema.SiteRow[]> {
@@ -303,8 +301,8 @@ export async function actionOwner(actionId: string): Promise<{ siteId: string; f
     .innerJoin(schema.sites, eq(schema.sites.id, schema.actions.site_id))
     .where(eq(schema.actions.id, actionId));
 
-  const rows = result as any;
-  return rows[0] ?? null;
+  const row = result[0] as { siteId: string; firmId: string } | undefined;
+  return row ?? null;
 }
 
 export async function insertAction(input: {
