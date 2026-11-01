@@ -185,7 +185,7 @@ export function createSite(input: {
     responsible_person: input.responsiblePerson,
     responsible_email: input.responsibleEmail ?? "",
     remind_opt_out: 0,
-    working_days: 5,
+    working_days: "1,2,3,4,5",
     created_at: new Date().toISOString(),
   };
   getDb()
