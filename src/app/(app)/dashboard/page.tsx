@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   // Calculate aggregate health for the firm
   const siteSummaries = await Promise.all(
     sites.map(async (site) => {
-      const summary = summaryFor(site.id);
+      const summary = await summaryFor(site.id);
       return { site, summary };
     })
   );

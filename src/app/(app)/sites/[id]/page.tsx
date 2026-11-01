@@ -22,8 +22,8 @@ export default async function SitePage({
   const site = await getSite(firm.id, id);
   if (!site) notFound();
 
-  const statuses = itemStatuses(site.id);
-  const summary = summarise(site.id, statuses);
+  const statuses = await itemStatuses(site.id);
+  const summary = await summarise(site.id, statuses);
   const sorted = sortByUrgency(statuses);
   const needsAttention = sorted.filter((s) => s.state !== "ok");
   const upcoming = sorted

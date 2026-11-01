@@ -11,12 +11,14 @@ export default async function SitesPage() {
   const { firm } = await requireFirm();
   if (await countSites(firm.id) === 0) redirect("/onboarding");
 
-  const sites = (await listSites(firm.id)).map((site) => ({
+  const sites = (await listSites(firm.id)).map(async (site) => ({
     site,
-    summary: summaryFor(site.id),
+    summary: await summaryFor(site.id),
   }));
 
-  const totals = sites.reduce(
+  const siteSummaries = await Promise.all(sites);
+
+  const totals = siteSummaries.reduce(
     (acc, { summary }) => ({
       overdue: acc.overdue + summary.overdue + summary.never,
       due: acc.due + summary.due,
@@ -43,7 +45,7 @@ export default async function SitesPage() {
       </div>
 
       <div className="stack">
-        {sites.map(({ site, summary }) => {
+        {siteSummaries.map(({ site, summary }) => {
           const total = 13;
           return (
             <Link

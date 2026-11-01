@@ -206,7 +206,7 @@ export function planSite(
 ): PlannedReminder | null {
   if (site.remind_opt_out) return null;
 
-  const statuses = itemStatuses(site.id);
+  const statuses = await itemStatuses(site.id);
   const late = statuses.filter((s) => s.state === "overdue" || s.state === "never");
   const due = statuses.filter((s) => s.state === "due");
   if (late.length === 0 && due.length === 0) return null;
@@ -221,7 +221,7 @@ export function planSite(
       : `${title} — ${s.overdueDays} day${s.overdueDays === 1 ? "" : "s"} late, last done ${fmtDate(s.last!.performed_at)}`;
   });
   const dueLines = due.map((s) => `${s.item.title} (${s.item.frequency})`);
-  const actionLines = actionsForSite(site.id)
+  const actionLines = (await actionsForSite(site.id))
     .filter((a) => a.status === "open")
     .map((a) => `${a.title}${a.due_date ? ` — due ${fmtDate(a.due_date)}` : ""}`);
 
@@ -305,7 +305,7 @@ export async function runReminders(options: {
     const fallbackEmail = await ownerEmail(firm.id) ?? "";
     const sites = await listSites(firm.id);
     for (const site of sites) {
-      const plan = planSite(site, weekKey, fallbackEmail);
+      const plan = await planSite(site, weekKey, fallbackEmail);
       if (!plan) continue;
       result.planned += 1;
 
@@ -386,21 +386,21 @@ async function ownerEmail(firmId: string): Promise<string | null> {
   return res[0]?.email ?? null;
 }
 
-export function recentNotifications(firmId: string, limit = 20): NotificationRow[] {
+export async function recentNotifications(firmId: string, limit = 20): Promise<NotificationRow[]> {
   const db = getDb();
-  return db.query.notifications.findMany({
+  return await db.query.notifications.findMany({
     where: eq(schema.notifications.firm_id, firmId),
     orderBy: [desc(schema.notifications.created_at)],
     limit: limit,
   });
 }
 
-export function getNotification(
+export async function getNotification(
   firmId: string,
   id: string,
-): NotificationRow | null {
+): Promise<NotificationRow | null> {
   const db = getDb();
-  return db.query.notifications.findFirst({
+  return await db.query.notifications.findFirst({
     where: and(
       eq(schema.notifications.id, id),
       eq(schema.notifications.firm_id, firmId)
@@ -408,10 +408,13 @@ export function getNotification(
   }) ?? null;
 }
 
-export function previewForFirm(firm: FirmRow, now = new Date()): PlannedReminder[] {
-  const email = ownerEmail(firm.id) ?? ""; // Note: ownerEmail is now async, this will return a Promise.
-  // I need to fix this to be async as well.
-  return [];
+export async function previewForFirm(firm: FirmRow, now = new Date()): Promise<PlannedReminder[]> {
+  const fallbackEmail = await ownerEmail(firm.id) ?? "";
+  const sites = await listSites(firm.id);
+  const plans = await Promise.all(
+    sites.map(async (site) => planSite(site, isoWeekKey(now), fallbackEmail))
+  );
+  return plans.filter((p): p is PlannedReminder => p !== null);
 }
 
 export function updateReminderSettings(

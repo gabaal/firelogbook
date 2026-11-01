@@ -43,7 +43,7 @@ export async function sendMail(input: MailInput): Promise<{ mode: MailMode }> {
   }
 
   const db = getDb();
-  await db.run(sql`
+  await db.execute(sql`
     INSERT INTO outbox (id, to_addr, subject, body, created_at)
     VALUES (${randomUUID()}, ${input.to}, ${input.subject}, ${input.text}, ${new Date()})
   `);

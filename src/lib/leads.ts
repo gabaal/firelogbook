@@ -24,14 +24,14 @@ export function createLead(input: {
     created_at: new Date(),
   };
 
-  db.insert(leads).values(lead).run();
+  await db.insert(leads).values(lead);
 
   return lead;
 }
 
-export function getLead(id: string): LeadRow | null {
+export async function getLead(id: string): Promise<LeadRow | null> {
   const db = getDb();
-  return db.query.leads.findFirst({
+  return await db.query.leads.findFirst({
     where: eq(leads.id, id),
   }) ?? null;
 }

@@ -5,15 +5,15 @@ import { getNextPdfJob, updatePdfJob, getSiteById } from "@/lib/data";
 import { signShareToken } from "@/lib/auth";
 
 export async function processNextPdfJob(origin: string) {
-  const job = getNextPdfJob();
+  const job = await getNextPdfJob();
   if (!job) return null;
 
-  updatePdfJob(job.id, { status: "rendering" });
+  await updatePdfJob(job.id, { status: "rendering" });
 
   try {
-    const site = getSiteById(job.site_id);
+    const site = await getSiteById(job.site_id);
     if (!site) {
-      updatePdfJob(job.id, { status: "failed" });
+      await updatePdfJob(job.id, { status: "failed" });
       return null;
     }
 
@@ -42,16 +42,16 @@ export async function processNextPdfJob(origin: string) {
       throw new Error("Printing failed");
     }
 
-    updatePdfJob(job.id, {
+    await updatePdfJob(job.id, {
       status: "completed",
       file_path: outFile,
-      completed_at: new Date().toISOString(),
+      completed_at: new Date(),
     });
 
     return job.id;
   } catch (e: any) {
     console.error(`PDF Job ${job.id} failed:`, e);
-    updatePdfJob(job.id, { status: "failed" });
+    await updatePdfJob(job.id, { status: "failed" });
     return null;
   }
 }

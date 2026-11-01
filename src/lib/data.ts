@@ -198,7 +198,7 @@ export async function insertPdfJob(input: {
 export async function updatePdfJob(id: string, patch: Partial<{
   status: string;
   file_path: string | null;
-  completed_at: string | null;
+  completed_at: Date | null;
 }>): Promise<void> {
   if (Object.keys(patch).length === 0) return;
   await db.update(schema.pdf_jobs)
