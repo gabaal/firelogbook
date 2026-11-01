@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That email does not look right" }, { status: 422 });
   }
 
-  const lead = createLead({
+  const lead = await createLead({
     email,
     firmName,
     siteName,

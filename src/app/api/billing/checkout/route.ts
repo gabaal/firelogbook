@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     subscription_status: "active",
     plan_interval: interval,
     stripe_subscription_id: `sub_sim_${firm.id.slice(0, 8)}`,
-    current_period_end: periodEnd,
+    current_period_end: new Date(periodEnd),
   });
 
   return NextResponse.json({ mode: "simulated" });

@@ -29,8 +29,8 @@ const STATUS_TONE: Record<string, string> = {
 
 export default async function RemindersPage() {
   const { firm } = await requireFirm();
-  const preview = previewForFirm(firm);
-  const notifications = recentNotifications(firm.id, 12);
+  const preview = await previewForFirm(firm);
+  const notifications = await recentNotifications(firm.id, 12);
   const sites = await listSites(firm.id);
   const siteName = new Map(sites.map((s) => [s.id, s.name]));
   const on = Boolean(firm.reminders_enabled);

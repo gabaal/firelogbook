@@ -33,7 +33,7 @@ export default async function BlankLogbookPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const lead = getLead(id);
+  const lead = await getLead(id);
   if (!lead) notFound();
 
   const address = [lead.address, lead.postcode].filter(Boolean).join(", ");

@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const lead = getLead(id);
+  const lead = await getLead(id);
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const pageUrl = `${req.nextUrl.origin}/free-logbook/${lead.id}`;
