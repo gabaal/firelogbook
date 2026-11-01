@@ -9,6 +9,10 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL);
 export const db = drizzle(sql, { schema });
 
+export function getDb() {
+  return db;
+}
+
 // Type aliases to maintain compatibility with the rest of the app
 export type FirmRow = typeof schema.firms.$inferSelect;
 export type UserRow = typeof schema.users.$inferSelect;
