@@ -3,14 +3,14 @@ import { getDb, type LeadRow } from "./db";
 import { leads } from "./schema-leads";
 import { eq } from "drizzle-orm";
 
-export function createLead(input: {
+export async function createLead(input: {
   email?: string | null;
   firmName?: string | null;
   siteName: string;
   address?: string;
   postcode?: string;
   responsiblePerson?: string;
-}): LeadRow {
+}): Promise<LeadRow> {
   const db = getDb();
   const lead: LeadRow = {
     id: randomUUID(),
