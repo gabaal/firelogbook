@@ -100,7 +100,7 @@ export async function deleteChecklistItem(id: string): Promise<void> {
 /* ------------------------------ sites ------------------------------ */
 
 export async function countSites(firmId: string): Promise<number> {
-  const result = await db.select({ count: sql<number>`count(*)` })
+  const result = await db.select({ count: sql`count(*)` })
     .from(schema.sites)
     .where(eq(schema.sites.firm_id, firmId));
 
