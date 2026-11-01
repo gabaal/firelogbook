@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db";
+import { sql } from "drizzle-orm";
 
 export type MailMode = "email" | "outbox";
 
@@ -41,12 +42,11 @@ export async function sendMail(input: MailInput): Promise<{ mode: MailMode }> {
     return { mode: "email" };
   }
 
-  getDb()
-    .prepare(
-      `INSERT INTO outbox (id, to_addr, subject, body, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(randomUUID(), input.to, input.subject, input.text, new Date().toISOString());
+  const db = getDb();
+  await db.run(sql`
+    INSERT INTO outbox (id, to_addr, subject, body, created_at)
+    VALUES (${randomUUID()}, ${input.to}, ${input.subject}, ${input.text}, ${new Date()})
+  `);
   return { mode: "outbox" };
 }
 

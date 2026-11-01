@@ -1,17 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { getDb } from "./db";
-
-export interface LeadRow {
-  id: string;
-  email: string | null;
-  firm_name: string | null;
-  site_name: string;
-  address: string;
-  postcode: string;
-  responsible_person: string;
-  source: string;
-  created_at: string;
-}
+import { getDb, type LeadRow } from "./db";
+import { leads } from "./schema-leads";
+import { eq } from "drizzle-orm";
 
 export function createLead(input: {
   email?: string | null;
@@ -21,6 +11,7 @@ export function createLead(input: {
   postcode?: string;
   responsiblePerson?: string;
 }): LeadRow {
+  const db = getDb();
   const lead: LeadRow = {
     id: randomUUID(),
     email: input.email?.trim().toLowerCase() || null,
@@ -30,32 +21,17 @@ export function createLead(input: {
     postcode: input.postcode?.trim().toUpperCase() ?? "",
     responsible_person: input.responsiblePerson?.trim() ?? "",
     source: "free-logbook",
-    created_at: new Date().toISOString(),
+    created_at: new Date(),
   };
 
-  getDb()
-    .prepare(
-      `INSERT INTO leads (id, email, firm_name, site_name, address, postcode, responsible_person, source, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      lead.id,
-      lead.email,
-      lead.firm_name,
-      lead.site_name,
-      lead.address,
-      lead.postcode,
-      lead.responsible_person,
-      lead.source,
-      lead.created_at,
-    );
+  db.insert(leads).values(lead).run();
 
   return lead;
 }
 
 export function getLead(id: string): LeadRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM leads WHERE id = ?")
-    .get(id) as LeadRow | undefined;
-  return row ?? null;
+  const db = getDb();
+  return db.query.leads.findFirst({
+    where: eq(leads.id, id),
+  }) ?? null;
 }

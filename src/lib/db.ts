@@ -1,13 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
+import * as leadsSchema from './schema-leads';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
 const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
+export const db = drizzle(sql, { schema: { ...schema, ...leadsSchema } });
 
 export const DATA_DIR = "/tmp/data";
 export const UPLOAD_DIR = "/tmp/uploads";
