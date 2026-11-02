@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // node:sqlite is a Node builtin; keep it out of the bundler.
-  serverExternalPackages: [],
+  // Keep native/ESM-heavy packages out of the server bundle. React-PDF
+  // resolves @react-pdf/hyphenate subpaths through its own exports map.
+  serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     serverActions: { bodySizeLimit: "12mb" },
   },

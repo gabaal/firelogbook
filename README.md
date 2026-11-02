@@ -5,8 +5,9 @@ with photo evidence, an overdue engine, a weekly digest email, and a dated audit
 pack — with accounts, firm-level tenancy, a 14-day trial and per-site billing.
 
 Data lives in Neon Postgres (via the `DATABASE_URL` environment variable), photos
-on disk, and PDF export via a headless Chromium. Stripe and Resend are optional and
-switch on when their env vars are present.
+in Vercel Blob (with a Neon fallback), and PDF export rendered in-process with
+`@react-pdf/renderer`. Stripe and Resend are optional and switch on when their env
+vars are present.
 
 ## Run it
 
@@ -189,8 +190,9 @@ block. Downloadable as PDF.
 
 ## Where the seams are now
 
-- **PDF off the request path.** It renders synchronously today (headless browser,
-  ~2–4s). Queue it, store the artefact, email a link before real concurrency.
+- **PDF off the request path.** The audit pack now renders in-process with
+  React-PDF. For very large packs, queue the render and store the artefact so the
+  request stays fast.
 - **Multi-user.** One membership per user today. Add invitations and roles; the
   check form still asks for a name rather than using the session, which weakens
   attribution once more than one person records checks.
@@ -216,5 +218,5 @@ block. Downloadable as PDF.
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Neon Postgres +
-Drizzle · Vercel Blob · IndexedDB · Stripe via the REST API · Resend (optional) ·
-no UI library, no CSS framework.
+Drizzle · Vercel Blob · @react-pdf/renderer · IndexedDB · Stripe via the REST API ·
+Resend (optional) · no UI library, no CSS framework.
