@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createLoginToken } from "@/lib/auth";
+import { cookies } from "next/headers";
+import {
+  SESSION_COOKIE,
+  createSession,
+  ensureAccount,
+} from "@/lib/auth";
+import { countSites } from "@/lib/data";
 import { Shield } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default async function SignInPage({
   searchParams,
@@ -14,13 +22,28 @@ export default async function SignInPage({
 
   async function handleSignIn(formData: FormData) {
     "use server";
-    const email = formData.get("email") as string;
-    if (!email) return;
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    if (!EMAIL.test(email)) redirect("/signin?error=invalid_email");
 
-    const { token } = await createLoginToken(email);
-    // In a real app, we'd send an email here.
-    // For this build, we'll redirect directly to the API route to handle cookies.
-    redirect(`/api/auth/magic?token=${token}`);
+    let destination = "/onboarding";
+    try {
+      const { user, firm } = await ensureAccount(email);
+      const session = await createSession(user.id, firm.id);
+      const store = await cookies();
+      store.set(SESSION_COOKIE, session, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 86_400,
+        secure: process.env.NODE_ENV === "production",
+      });
+      destination = (await countSites(firm.id)) > 0 ? "/sites" : "/onboarding";
+    } catch (err) {
+      console.error("signin: could not create the session", err);
+      redirect("/signin?error=signin_failed");
+    }
+
+    redirect(destination);
   }
 
   return (
@@ -36,6 +59,8 @@ export default async function SignInPage({
           <p className="small" style={{ color: "var(--bad)", fontWeight: 550, marginBottom: 16, textAlign: "center" }}>
             {error === "invalid_token" ? "The login link is invalid or has expired." :
              error === "missing_token" ? "No login token was provided." :
+             error === "invalid_email" ? "That does not look like an email address." :
+             error === "signin_failed" ? "We could not sign you in just now. Please try again." :
              error}
           </p>
         )}
