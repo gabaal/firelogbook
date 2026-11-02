@@ -159,6 +159,13 @@ const SCHEMA_SQL = [
     body text NOT NULL,
     created_at timestamp NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS check_photos (
+    id text PRIMARY KEY,
+    site_id text NOT NULL,
+    content_type text NOT NULL,
+    data text NOT NULL,
+    created_at timestamp NOT NULL
+  )`,
 ];
 
 type Database = NeonHttpDatabase<typeof schema>;

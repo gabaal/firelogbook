@@ -67,13 +67,10 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       // Do not save a record whose evidence photo was silently dropped.
       console.error("Photo upload failed:", error);
-      const configured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
       return NextResponse.json(
         {
-          error: configured
-            ? "The photo could not be uploaded. Please try again."
-            : "Photo storage is not configured for this deployment.",
-          code: configured ? "photo_upload_failed" : "photo_storage_unconfigured",
+          error: "The photo could not be stored. Please try again.",
+          code: "photo_upload_failed",
         },
         { status: 503 },
       );

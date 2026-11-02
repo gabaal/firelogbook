@@ -167,3 +167,15 @@ export const outbox = pgTable("outbox", {
   body: text("body").notNull(),
   created_at: timestamp("created_at").notNull(),
 });
+
+/**
+ * Fallback photo store used when Vercel Blob is not configured. `data` is a
+ * base64 JPEG/PNG; `photoUrl()` maps `db:<id>` to /api/photos/[id].
+ */
+export const check_photos = pgTable("check_photos", {
+  id: text("id").primaryKey(),
+  site_id: text("site_id").notNull(),
+  content_type: text("content_type").notNull(),
+  data: text("data").notNull(),
+  created_at: timestamp("created_at").notNull(),
+});
