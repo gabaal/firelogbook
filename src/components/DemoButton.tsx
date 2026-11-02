@@ -16,7 +16,14 @@ export default function DemoButton({
   async function open() {
     setBusy(true);
     try {
-      await fetch("/api/auth/demo", { method: "POST" });
+      const res = await fetch("/api/auth/demo", { method: "POST" });
+      // The endpoint redirects to /sites on success and back to /signin on
+      // failure, so use wherever it actually landed.
+      if (new URL(res.url).pathname.startsWith("/signin")) {
+        setBusy(false);
+        window.location.href = res.url;
+        return;
+      }
       router.push("/sites");
       router.refresh();
     } catch {

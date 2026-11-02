@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getInviteByToken, deleteInvite } from "@/lib/data";
 import { getDb } from "@/lib/db";
-import { createSession } from "@/lib/auth";
+import { createSession, SESSION_COOKIE } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/schema";
 
@@ -51,7 +51,7 @@ export async function GET(
   const session = await createSession(userId, invite.firm_id);
 
   const response = NextResponse.redirect(new URL("/sites", req.url));
-  response.cookies.set("session", session, {
+  response.cookies.set(SESSION_COOKIE, session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

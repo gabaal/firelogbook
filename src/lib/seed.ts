@@ -1,6 +1,7 @@
-import type { DatabaseSync } from "node:sqlite";
-import { randomUUID } from "node:crypto";
 import { CHECKLIST, FREQUENCIES, type CheckItem } from "./checklist";
+import { ensureSchema, getDb } from "./db";
+import * as schema from "./schema";
+import { eq } from "drizzle-orm";
 
 const DAY = 86_400_000;
 
@@ -169,83 +170,113 @@ function defaultLastDone(item: CheckItem): number {
   return Math.round(period * 0.35);
 }
 
-function isoAt(daysAgo: number, hour: number, minute: number): string {  const d = new Date(Date.now() - daysAgo * DAY);
+function dateAt(daysAgo: number, hour: number, minute: number): Date {
+  const d = new Date(Date.now() - daysAgo * DAY);
   d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+  return d;
 }
+
+export const DEMO_FIRM_ID = "firm-marshvale";
+const DEMO_EMAIL = "anya@marshvale.example";
+
+let seeding: Promise<void> | null = null;
 
 /**
- * Guarantees the demo firm has a user and membership, so the sample data can be
- * signed into. Runs on every boot; safe to repeat.
+ * Creates the demo firm, its user and the sample logbooks if they are missing.
+ * Idempotent and safe to call on every demo sign-in; the work happens once per
+ * process, and every insert tolerates a concurrent caller.
  */
-export function ensureDemoAccount(db: DatabaseSync): void {
-  const firm = db
-    .prepare("SELECT id FROM firms WHERE subscription_status = 'demo' LIMIT 1")
-    .get() as { id: string } | undefined;
-  if (!firm) return;
-
-  const now = new Date().toISOString();
-  const email = "anya@marshvale.example";
-
-  let user = db.prepare("SELECT id FROM users WHERE email = ?").get(email) as
-    | { id: string }
-    | undefined;
-
-  if (!user) {
-    const id = "user-demo";
-    db.prepare(
-      "INSERT INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)",
-    ).run(id, email, "Anya Patel", now);
-    user = { id };
+export function ensureDemoSeed(): Promise<void> {
+  if (!seeding) {
+    seeding = seedDemo().catch((error) => {
+      seeding = null;
+      throw error;
+    });
   }
-
-  const membership = db
-    .prepare("SELECT id FROM memberships WHERE user_id = ? AND firm_id = ?")
-    .get(user.id, firm.id);
-
-  if (!membership) {
-    db.prepare(
-      "INSERT INTO memberships (id, user_id, firm_id, role, created_at) VALUES (?, ?, ?, 'owner', ?)",
-    ).run(`membership-demo-${firm.id}`, user.id, firm.id, now);
-  }
+  return seeding;
 }
 
-export function seedIfEmpty(db: DatabaseSync): void {
-  const row = db
-    .prepare("SELECT COUNT(*) AS n FROM sites")
-    .get() as { n: number };
-  if (row.n > 0) return;
+async function seedDemo(): Promise<void> {
+  await ensureSchema();
+  const db = getDb();
+  const now = new Date();
 
-  const now = new Date().toISOString();
-  const firmId = "firm-marshvale";
+  const firm = await db.query.firms.findFirst({
+    where: eq(schema.firms.id, DEMO_FIRM_ID),
+  });
+  if (!firm) {
+    await db
+      .insert(schema.firms)
+      .values({
+        id: DEMO_FIRM_ID,
+        name: "Marsh & Vale Property",
+        created_at: now,
+        subscription_status: "demo",
+      })
+      .onConflictDoNothing();
+  }
 
-  db.prepare(
-    "INSERT INTO firms (id, name, created_at, subscription_status) VALUES (?, ?, ?, 'demo')",
-  ).run(firmId, "Marsh & Vale Property", now);
+  let user = await db.query.users.findFirst({
+    where: eq(schema.users.email, DEMO_EMAIL),
+  });
+  if (!user) {
+    await db
+      .insert(schema.users)
+      .values({
+        id: "user-demo",
+        email: DEMO_EMAIL,
+        name: "Anya Patel",
+        created_at: now,
+      })
+      .onConflictDoNothing();
+    user = await db.query.users.findFirst({
+      where: eq(schema.users.email, DEMO_EMAIL),
+    });
+  }
+  if (!user) throw new Error("Could not create the demo user");
 
-  ensureDemoAccount(db);
+  const membership = await db.query.memberships.findFirst({
+    where: eq(schema.memberships.user_id, user.id),
+  });
+  if (!membership) {
+    await db
+      .insert(schema.memberships)
+      .values({
+        id: `membership-demo-${DEMO_FIRM_ID}`,
+        user_id: user.id,
+        firm_id: DEMO_FIRM_ID,
+        role: "owner",
+        created_at: now,
+      })
+      .onConflictDoNothing();
+  }
 
-  const insertSite = db.prepare(
-    `INSERT INTO sites (id, firm_id, name, address, postcode, responsible_person, responsible_email, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  );
-  const insertCheck = db.prepare(
-    `INSERT INTO checks (id, site_id, item_key, performed_at, performed_by, result, note, photo, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
-  );
+  const existingSite = await db.query.sites.findFirst({
+    where: eq(schema.sites.firm_id, DEMO_FIRM_ID),
+  });
+  if (existingSite) return;
+
+  for (const site of SITES) {
+    await db
+      .insert(schema.sites)
+      .values({
+        id: site.id,
+        firm_id: DEMO_FIRM_ID,
+        name: site.name,
+        address: site.address,
+        postcode: site.postcode,
+        responsible_person: site.responsiblePerson,
+        responsible_email: site.responsibleEmail,
+        remind_opt_out: 0,
+        working_days: "1,2,3,4,5",
+        created_at: now,
+      })
+      .onConflictDoNothing();
+  }
+
+  const checks: (typeof schema.checks.$inferInsert)[] = [];
 
   SITES.forEach((site, siteIndex) => {
-    insertSite.run(
-      site.id,
-      firmId,
-      site.name,
-      site.address,
-      site.postcode,
-      site.responsiblePerson,
-      site.responsibleEmail,
-      now,
-    );
-
     const rand = mulberry32(9001 + siteIndex * 137);
 
     for (const item of CHECKLIST) {
@@ -273,17 +304,20 @@ export function seedIfEmpty(db: DatabaseSync): void {
         const hour =
           item.frequency === "daily" ? 7 + Math.floor(rand() * 3) : 8 + Math.floor(rand() * 8);
         const minute = Math.floor(rand() * 60);
+        const performedAt = dateAt(ago, hour, minute);
 
-        insertCheck.run(
-          randomUUID(),
-          site.id,
-          item.key,
-          isoAt(ago, hour, minute),
-          site.checkers[Math.floor(rand() * site.checkers.length)],
-          isFail ? "fail" : "pass",
-          isFail ? site.recentFail!.note : noteFor(item, rand),
-          now,
-        );
+        checks.push({
+          // Deterministic id, so a concurrent seed cannot duplicate rows.
+          id: `check-${site.id}-${item.key}-${performedAt.getTime()}`,
+          site_id: site.id,
+          item_key: item.key,
+          performed_at: performedAt,
+          performed_by: site.checkers[Math.floor(rand() * site.checkers.length)],
+          result: isFail ? "fail" : "pass",
+          note: isFail ? site.recentFail!.note : noteFor(item, rand),
+          photo: null,
+          created_at: now,
+        });
 
         // A little irregularity, the way real logbooks look.
         if (item.frequency === "daily") {
@@ -297,47 +331,56 @@ export function seedIfEmpty(db: DatabaseSync): void {
     }
   });
 
-  const insertAction = db.prepare(
-    `INSERT INTO actions (id, site_id, check_id, title, detail, due_date, status, created_at, closed_at, closed_note)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  );
+  // Keep each statement well below Neon's parameter limit.
+  for (let i = 0; i < checks.length; i += 500) {
+    await db
+      .insert(schema.checks)
+      .values(checks.slice(i, i + 500))
+      .onConflictDoNothing();
+  }
 
-  insertAction.run(
-    "action-door",
-    "site-harbour",
-    null,
-    "Rear office fire door does not self-close",
-    "Door closes to within 40mm and stops — likely a failed closer arm. Door kept shut and the room taken out of use. Contractor booked.",
-    new Date(Date.now() + 2 * DAY).toISOString(),
-    "open",
-    new Date(Date.now() - 9 * DAY).toISOString(),
-    null,
-    null,
-  );
-
-  insertAction.run(
-    "action-fra",
-    "site-kingsdown",
-    null,
-    "Fire risk assessment overdue — book assessor",
-    "Last assessment is more than 12 months old. Insurer has asked for a current copy.",
-    new Date(Date.now() - 6 * DAY).toISOString(),
-    "open",
-    new Date(Date.now() - 40 * DAY).toISOString(),
-    null,
-    null,
-  );
-
-  insertAction.run(
-    "action-blocked",
-    "site-cafe",
-    null,
-    "Extinguisher at the servery blocked by a fridge",
-    "Fridge had been pushed across the extinguisher. Moved back and the area was marked out.",
-    new Date(Date.now() - 24 * DAY).toISOString(),
-    "closed",
-    new Date(Date.now() - 31 * DAY).toISOString(),
-    new Date(Date.now() - 20 * DAY).toISOString(),
-    "Fridge relocated, floor marking added, staff briefed.",
-  );
+  await db
+    .insert(schema.actions)
+    .values([
+      {
+        id: "action-door",
+        site_id: "site-harbour",
+        check_id: null,
+        title: "Rear office fire door does not self-close",
+        detail:
+          "Door closes to within 40mm and stops — likely a failed closer arm. Door kept shut and the room taken out of use. Contractor booked.",
+        due_date: new Date(Date.now() + 2 * DAY),
+        status: "open",
+        created_at: new Date(Date.now() - 9 * DAY),
+        closed_at: null,
+        closed_note: null,
+      },
+      {
+        id: "action-fra",
+        site_id: "site-kingsdown",
+        check_id: null,
+        title: "Fire risk assessment overdue — book assessor",
+        detail:
+          "Last assessment is more than 12 months old. Insurer has asked for a current copy.",
+        due_date: new Date(Date.now() - 6 * DAY),
+        status: "open",
+        created_at: new Date(Date.now() - 40 * DAY),
+        closed_at: null,
+        closed_note: null,
+      },
+      {
+        id: "action-blocked",
+        site_id: "site-cafe",
+        check_id: null,
+        title: "Extinguisher at the servery blocked by a fridge",
+        detail:
+          "Fridge had been pushed across the extinguisher. Moved back and the area was marked out.",
+        due_date: new Date(Date.now() - 24 * DAY),
+        status: "closed",
+        created_at: new Date(Date.now() - 31 * DAY),
+        closed_at: new Date(Date.now() - 20 * DAY),
+        closed_note: "Fridge relocated, floor marking added, staff briefed.",
+      },
+    ])
+    .onConflictDoNothing();
 }
