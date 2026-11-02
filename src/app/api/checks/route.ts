@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import { UPLOAD_DIR } from "@/lib/db";
+import { storePhoto } from "@/lib/photo";
 import { getSession } from "@/lib/auth";
 import { firmIsActive } from "@/lib/billing";
 import { getSite, insertAction, insertCheck, getChecklistForSite } from "@/lib/data";
@@ -65,17 +62,15 @@ export async function POST(req: NextRequest) {
   if (file instanceof File && file.size > 0) {
     if (file.size > MAX_PHOTO) return bad("Photo is too large", 413);
     if (!file.type.startsWith("image/")) return bad("Photo must be an image", 415);
-    const name = `${randomUUID()}.jpg`;
-    const bytes = Buffer.from(await file.arrayBuffer());
     try {
-      await fs.mkdir(UPLOAD_DIR, { recursive: true });
-      await fs.writeFile(path.join(UPLOAD_DIR, name), bytes);
-      photo = name;
-    } catch (e) {
-      console.error("Upload failed:", e);
-      // In production (Vercel), local writes fail.
-      // We proceed without the photo for now to avoid a 500.
-      photo = null;
+      photo = await storePhoto(siteId, file);
+    } catch (error) {
+      // Do not save a record whose evidence photo was silently dropped.
+      console.error("Photo upload failed:", error);
+      return NextResponse.json(
+        { error: "The photo could not be uploaded. Check your connection and try again." },
+        { status: 503 },
+      );
     }
   }
 

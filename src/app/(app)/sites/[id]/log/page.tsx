@@ -4,6 +4,7 @@ import { requireActiveFirm } from "@/lib/auth";
 import { checksForSite, getSite } from "@/lib/data";
 import { FREQUENCIES, ITEMS_BY_KEY } from "@/lib/checklist";
 import { fmtDate, fmtTime } from "@/lib/format";
+import { photoUrl } from "@/lib/photo";
 import { ArrowLeft } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -109,10 +110,10 @@ export default async function LogPage({
                       </td>
                       <td>
                         {c.photo ? (
-                          <a href={`/api/uploads/${c.photo}`} target="_blank" rel="noreferrer">
+                          <a href={photoUrl(c.photo)} target="_blank" rel="noreferrer">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={`/api/uploads/${c.photo}`}
+                              src={photoUrl(c.photo)}
                               alt="Evidence"
                               style={{
                                 width: 44,

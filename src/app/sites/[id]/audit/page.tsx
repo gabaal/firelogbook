@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireActiveFirm, signShareToken, verifyShareToken } from "@/lib/auth";
 import { checksBetween, checksForSite, getSite, getSiteById, actionsForSite } from "@/lib/data";
 import { CHECKLIST, DISCLAIMER, FREQUENCIES } from "@/lib/checklist";
+import { photoUrl } from "@/lib/photo";
 import {
   endOfDayIso,
   fmtDate,
@@ -428,7 +429,7 @@ export default async function AuditPage({
                 <figure key={c.id} style={{ margin: 0 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`/api/uploads/${c.photo}`}
+                    src={photoUrl(c.photo!)}
                     alt={`Evidence for ${c.item_key}`}
                     style={{
                       width: "100%",

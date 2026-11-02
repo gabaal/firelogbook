@@ -21,6 +21,10 @@ and uses a hoisted `node_modules`, so nothing is written outside this folder.
 Copy `.env.example` to `.env.local` and set `DATABASE_URL` to a Neon connection
 string before running anything.
 
+Check photos are stored in Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (the
+Vercel Blob integration adds it automatically). Locally they fall back to
+`/tmp/uploads`, served by `/api/uploads/[name]`.
+
 The free-logbook and email paths create any missing tables lazily with
 `CREATE TABLE IF NOT EXISTS`, so a fresh database works without a separate
 migration step. They do not seed demo data: `src/lib/seed.ts` still holds the old
@@ -209,5 +213,5 @@ block. Downloadable as PDF.
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Neon Postgres +
-Drizzle · IndexedDB · Stripe via the REST API · Resend (optional) · no UI library,
-no CSS framework.
+Drizzle · Vercel Blob · IndexedDB · Stripe via the REST API · Resend (optional) ·
+no UI library, no CSS framework.
