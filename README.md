@@ -22,10 +22,11 @@ Copy `.env.example` to `.env.local` and set `DATABASE_URL` to a Neon connection
 string before running anything.
 
 Check photos are stored in Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (the
-Vercel Blob integration adds it automatically). Without it, production stores
-them in the Neon `check_photos` table and serves them from `/api/photos/[id]`;
-local development uses `/tmp/uploads` and `/api/uploads/[name]`. Connect a Blob
-store before the table gets large.
+Vercel Blob integration adds it automatically). Private stores are supported and
+served through `/api/blob/[...path]`; public stores use their direct URLs. Without
+a Blob store, production stores photos in the Neon `check_photos` table and serves
+them from `/api/photos/[id]`; local development uses `/tmp/uploads` and
+`/api/uploads/[name]`. Connect a Blob store before the table gets large.
 
 The free-logbook and email paths create any missing tables lazily with
 `CREATE TABLE IF NOT EXISTS`, so a fresh database works without a separate
