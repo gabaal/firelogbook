@@ -1,7 +1,7 @@
 import { CHECKLIST, FREQUENCIES, type CheckItem } from "./checklist";
 import { ensureSchema, getDb } from "./db";
 import * as schema from "./schema";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 const DAY = 86_400_000;
 
@@ -254,7 +254,29 @@ async function seedDemo(): Promise<void> {
   const existingSite = await db.query.sites.findFirst({
     where: eq(schema.sites.firm_id, DEMO_FIRM_ID),
   });
-  if (existingSite) return;
+  if (existingSite) {
+    // The demo history goes back ~400 days. If the site row was created "now"
+    // (older seeding code), the default one-year audit range hides that history.
+    const demoSites = await db.query.sites.findMany({
+      where: eq(schema.sites.firm_id, DEMO_FIRM_ID),
+    });
+    for (const site of demoSites) {
+      const oldest = await db.query.checks.findFirst({
+        where: eq(schema.checks.site_id, site.id),
+        orderBy: [asc(schema.checks.performed_at)],
+      });
+      if (
+        oldest &&
+        new Date(site.created_at).getTime() > oldest.performed_at.getTime()
+      ) {
+        await db
+          .update(schema.sites)
+          .set({ created_at: oldest.performed_at })
+          .where(eq(schema.sites.id, site.id));
+      }
+    }
+    return;
+  }
 
   for (const site of SITES) {
     await db
@@ -269,7 +291,8 @@ async function seedDemo(): Promise<void> {
         responsible_email: site.responsibleEmail,
         remind_opt_out: 0,
         working_days: "1,2,3,4,5",
-        created_at: now,
+        // The sample checks span ~400 days, so the site's history starts then.
+        created_at: new Date(Date.now() - 400 * DAY),
       })
       .onConflictDoNothing();
   }
