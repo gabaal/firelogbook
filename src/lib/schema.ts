@@ -146,3 +146,24 @@ export const pdf_jobs = pgTable("pdf_jobs", {
   created_at: timestamp("created_at").notNull(),
   completed_at: timestamp("completed_at"),
 });
+
+export const leads = pgTable("leads", {
+  id: text("id").primaryKey(),
+  email: text("email"),
+  firm_name: text("firm_name"),
+  site_name: text("site_name").notNull(),
+  address: text("address").notNull().default(""),
+  postcode: text("postcode").notNull().default(""),
+  responsible_person: text("responsible_person").notNull().default(""),
+  source: text("source").notNull().default("free-logbook"),
+  created_at: timestamp("created_at").notNull(),
+});
+export type LeadRow = typeof leads.$inferSelect;
+
+export const outbox = pgTable("outbox", {
+  id: text("id").primaryKey(),
+  to_addr: text("to_addr").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  created_at: timestamp("created_at").notNull(),
+});

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { getDb, type LeadRow } from "./db";
-import { leads } from "./schema-leads";
+import { ensureSchema, getDb, type LeadRow } from "./db";
+import { leads } from "./schema";
 import { eq } from "drizzle-orm";
 
 export async function createLead(input: {
@@ -11,6 +11,7 @@ export async function createLead(input: {
   postcode?: string;
   responsiblePerson?: string;
 }): Promise<LeadRow> {
+  await ensureSchema();
   const db = getDb();
   const lead: LeadRow = {
     id: randomUUID(),
@@ -30,6 +31,7 @@ export async function createLead(input: {
 }
 
 export async function getLead(id: string): Promise<LeadRow | null> {
+  await ensureSchema();
   const db = getDb();
   return await db.query.leads.findFirst({
     where: eq(leads.id, id),

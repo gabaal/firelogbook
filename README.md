@@ -4,9 +4,9 @@ The fire safety logbook for small sites: a fixed checklist, phone-first recordin
 with photo evidence, an overdue engine, a weekly digest email, and a dated audit
 pack — with accounts, firm-level tenancy, a 14-day trial and per-site billing.
 
-Data lives in a local SQLite file (`node:sqlite`, built into Node 22+), photos on
-disk, and PDF export via a headless Chromium. No paid services are required to run
-it; Stripe and Resend are optional and switch on when their env vars are present.
+Data lives in Neon Postgres (via the `DATABASE_URL` environment variable), photos
+on disk, and PDF export via a headless Chromium. Stripe and Resend are optional and
+switch on when their env vars are present.
 
 ## Run it
 
@@ -18,11 +18,13 @@ pnpm dev          # http://localhost:3100
 `package.json` pins port 3100. `.npmrc` keeps the package store inside the project
 and uses a hoisted `node_modules`, so nothing is written outside this folder.
 
-Copy `.env.example` to `.env.local` if you want to change any of the defaults.
+Copy `.env.example` to `.env.local` and set `DATABASE_URL` to a Neon connection
+string before running anything.
 
-First boot seeds a demo firm with three sites and ~2.5 years of plausible history,
-plus a demo user (`anya@marshvale.example`). "Open the demo account" on the
-sign-in page opens it in one click — no email needed.
+The free-logbook and email paths create any missing tables lazily with
+`CREATE TABLE IF NOT EXISTS`, so a fresh database works without a separate
+migration step. They do not seed demo data: `src/lib/seed.ts` still holds the old
+SQLite seeding code and is not run automatically.
 
 | Route | What it shows |
 | --- | --- |
@@ -189,8 +191,8 @@ block. Downloadable as PDF.
 - **Editing a site.** The responsible person's email is set at onboarding and shown
   on the site page, but not editable yet — which will bite the first time a reminder
   bounces.
-- **Postgres.** SQLite is fine to roughly 50 sites on one instance. Move when a
-  second server instance is needed, not before.
+- **Migrations.** Tables are created lazily with `CREATE TABLE IF NOT EXISTS`; add a
+  versioned migration runner before the schema starts changing in place.
 
 ## Design decisions worth keeping
 
@@ -206,6 +208,6 @@ block. Downloadable as PDF.
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · node:sqlite ·
-IndexedDB · Stripe via the REST API · Resend (optional) · no UI library, no CSS
-framework.
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Neon Postgres +
+Drizzle · IndexedDB · Stripe via the REST API · Resend (optional) · no UI library,
+no CSS framework.

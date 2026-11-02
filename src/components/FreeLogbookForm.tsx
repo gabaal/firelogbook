@@ -28,9 +28,36 @@ export default function FreeLogbookForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Could not build the log book");
-      setResult({ link: body.link, emailed: body.emailed, mailMode: body.mailMode });
+      // A crashed serverless function can return an empty body, which makes
+      // res.json() throw "Unexpected end of JSON input". Read text first.
+      const raw = await res.text();
+      let body: {
+        error?: string;
+        link?: string;
+        emailed?: boolean;
+        mailMode?: string;
+      } = {};
+      try {
+        if (raw) body = JSON.parse(raw) as typeof body;
+      } catch {
+        /* non-JSON error page */
+      }
+      if (!res.ok) {
+        throw new Error(
+          body.error ??
+            (res.status === 404
+              ? "The log book service is not available. Please try again shortly."
+              : "Could not build the log book"),
+        );
+      }
+      if (!body.link) {
+        throw new Error("The server did not return a log book link. Please try again.");
+      }
+      setResult({
+        link: body.link,
+        emailed: Boolean(body.emailed),
+        mailMode: body.mailMode ?? "outbox",
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

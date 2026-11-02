@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { getDb } from "./db";
-import { sql } from "drizzle-orm";
+import { ensureSchema, getDb } from "./db";
+import { outbox } from "./schema";
 
 export type MailMode = "email" | "outbox";
 
@@ -42,18 +42,26 @@ export async function sendMail(input: MailInput): Promise<{ mode: MailMode }> {
     return { mode: "email" };
   }
 
+  await ensureSchema();
   const db = getDb();
-  await db.execute(sql`
-    INSERT INTO outbox (id, to_addr, subject, body, created_at)
-    VALUES (${randomUUID()}, ${input.to}, ${input.subject}, ${input.text}, ${new Date()})
-  `);
+  await db.insert(outbox).values({
+    id: randomUUID(),
+    to_addr: input.to,
+    subject: input.subject,
+    body: input.text,
+    created_at: new Date(),
+  });
   return { mode: "outbox" };
 }
 
 export function baseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    process.env.APP_URL ??
-    "http://localhost:3100"
-  ).replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_BASE_URL ?? process.env.APP_URL;
+  if (configured) return configured.replace(/\/$/, "");
+
+  // On Vercel, derive the public origin when no explicit base URL is set.
+  const vercel =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel}`;
+
+  return "http://localhost:3100";
 }
