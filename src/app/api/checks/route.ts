@@ -71,6 +71,11 @@ export async function POST(req: NextRequest) {
         {
           error: "The photo could not be stored. Please try again.",
           code: "photo_upload_failed",
+          detail: error instanceof Error ? error.message : String(error),
+          dbCode:
+            error && typeof error === "object" && "code" in error
+              ? String((error as { code?: unknown }).code)
+              : undefined,
         },
         { status: 503 },
       );
