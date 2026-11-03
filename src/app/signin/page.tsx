@@ -1,7 +1,13 @@
 import { Shield } from "@/components/icons";
 import SignInForm from "@/components/SignInForm";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false },
+};
 
 const ERROR_COPY: Record<string, string> = {
   expired: "That sign-in link has expired or has already been used. Ask for a new one.",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLead } from "@/lib/leads";
 import { CHECKLIST, FREQUENCIES } from "@/lib/checklist";
@@ -7,6 +8,11 @@ import { ArrowLeft, Download } from "@/components/icons";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Your fire safety log book",
+  robots: { index: false, follow: false },
+};
 
 function short(text: string): string {
   const first = text.split(". ")[0];

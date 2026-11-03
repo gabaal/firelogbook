@@ -1,6 +1,21 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Flame } from "@/components/icons";
 import DemoButton from "@/components/DemoButton";
+
+export const metadata: Metadata = {
+  title: { absolute: "FireLogbook — the fire safety logbook for small sites" },
+  description:
+    "Record fire safety checks on a phone, chase what is overdue, and hand an inspector a dated audit pack. Built for small sites, with a 14-day free trial.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "FireLogbook — the fire safety logbook for small sites",
+    description:
+      "Record fire safety checks on a phone, chase what is overdue, and hand an inspector a dated audit pack.",
+    url: "/",
+    type: "website",
+  },
+};
 
 export default function Home() {
   return (
@@ -14,6 +29,9 @@ export default function Home() {
             FireLogbook
           </Link>
           <nav className="topnav">
+            <Link href="/checks" className="hidden-sm">
+              The 13 checks
+            </Link>
             <Link href="/free-logbook" className="hidden-sm">
               Free log book
             </Link>
@@ -94,6 +112,9 @@ export default function Home() {
               Order 2005 and the relevant British standards for alarm,
               extinguisher and emergency lighting testing.
             </p>
+            <Link href="/checks" className="btn btn-sm" style={{ marginTop: 16 }}>
+              See all 13 checks →
+            </Link>
           </div>
           <div className="card card-pad">
             <p className="eyebrow">Pricing</p>

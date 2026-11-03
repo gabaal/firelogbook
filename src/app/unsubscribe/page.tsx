@@ -1,9 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Flame, Check, Alert } from "@/components/icons";
 import { getSiteById } from "@/lib/data";
 import { verifyUnsubscribeToken } from "@/lib/reminders";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Unsubscribe",
+  robots: { index: false, follow: false },
+};
 
 export default async function UnsubscribePage({
   searchParams,

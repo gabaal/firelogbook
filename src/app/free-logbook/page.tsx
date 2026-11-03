@@ -1,11 +1,20 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Flame, Check } from "@/components/icons";
 import FreeLogbookForm from "@/components/FreeLogbookForm";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Free fire safety log book — print one in a minute",
   description:
     "A printable fire safety log book with the thirteen checks an inspector asks for. Free, no account, filled in with your premises details.",
+  alternates: { canonical: "/free-logbook" },
+  openGraph: {
+    title: "Free fire safety log book — print one in a minute",
+    description:
+      "The thirteen checks an inspector asks for, laid out for a full year, with your premises details on the cover. Free A4 PDF.",
+    url: "/free-logbook",
+    type: "website",
+  },
 };
 
 export default function FreeLogbookPage() {
@@ -20,6 +29,9 @@ export default function FreeLogbookPage() {
             FireLogbook
           </Link>
           <nav className="topnav">
+            <Link href="/checks" className="hidden-sm">
+              The 13 checks
+            </Link>
             <Link href="/signin">Sign in</Link>
             <Link href="/" className="btn btn-sm" style={{ marginLeft: 4 }}>
               Start free trial
@@ -85,6 +97,13 @@ export default function FreeLogbookPage() {
               >
                 See the digital logbook →
               </Link>
+              <p className="tiny muted" style={{ marginTop: 10 }}>
+                Not sure what each check involves?{" "}
+                <Link href="/checks" style={{ textDecoration: "underline" }}>
+                  Read the 13 check guides
+                </Link>
+                .
+              </p>
             </div>
           </aside>
         </div>
