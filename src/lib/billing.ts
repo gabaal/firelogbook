@@ -64,12 +64,15 @@ export function statusCopy(firm: FirmRow): {
   }
   if (firm.subscription_status === "trialing") {
     const days = trialDaysLeft(firm);
+    const cardSaved = Boolean(firm.stripe_customer_id);
     return {
       label: days > 0 ? `Trial · ${days} day${days === 1 ? "" : "s"} left` : "Trial ended",
       tone: days > 0 ? "warn" : "bad",
       detail:
         days > 0
-          ? "Add a payment method before the trial ends to keep recording checks."
+          ? cardSaved
+            ? "Your card is saved. Billing starts automatically when the trial ends."
+            : "Add a payment method before the trial ends to keep recording checks."
           : "Your trial has ended. Start a subscription to keep recording.",
     };
   }

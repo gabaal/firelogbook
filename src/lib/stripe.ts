@@ -49,6 +49,7 @@ export async function createCheckoutSession(input: {
   interval: PlanInterval;
   email: string;
   baseUrl: string;
+  trialDays?: number;
 }): Promise<string> {
   const session = await stripePost("/checkout/sessions", {
     mode: "subscription",
@@ -60,6 +61,11 @@ export async function createCheckoutSession(input: {
     client_reference_id: input.firm.id,
     "metadata[firm_id]": input.firm.id,
     "subscription_data[metadata][firm_id]": input.firm.id,
+    // Carry whatever is left of the app trial into Stripe so an early
+    // subscriber's card is saved now but not charged until the trial ends.
+    ...(input.trialDays && input.trialDays > 0
+      ? { "subscription_data[trial_period_days]": Math.ceil(input.trialDays) }
+      : {}),
     allow_promotion_codes: "true",
   });
 

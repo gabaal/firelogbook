@@ -18,6 +18,7 @@ interface StripeEvent {
       subscription?: string;
       status?: string;
       current_period_end?: number;
+      trial_end?: number | null;
       metadata?: { firm_id?: string };
       client_reference_id?: string;
       // Newer API versions moved the period end onto the subscription item.
@@ -116,8 +117,9 @@ export async function POST(req: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed":
+      // The subscription events below carry the real status (including a
+      // trial), so only store the ids here.
       await updateFirm(firm.id, {
-        subscription_status: "active",
         stripe_customer_id: object.customer ?? firm.stripe_customer_id,
         stripe_subscription_id: object.subscription ?? firm.stripe_subscription_id,
       });
@@ -135,6 +137,11 @@ export async function POST(req: NextRequest) {
         current_period_end: periodEnd
           ? new Date(periodEnd * 1000)
           : firm.current_period_end,
+        // A carried-over trial: keep the app's trial countdown in step with
+        // Stripe so the paywall lifts exactly when the trial ends.
+        trial_ends_at: object.trial_end
+          ? new Date(object.trial_end * 1000)
+          : firm.trial_ends_at,
       });
       break;
     }

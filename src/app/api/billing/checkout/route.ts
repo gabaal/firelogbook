@@ -4,6 +4,7 @@ import { baseUrl } from "@/lib/mail";
 import { countSites, updateFirm } from "@/lib/data";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
 import type { PlanInterval } from "@/lib/billing";
+import { trialDaysLeft } from "@/lib/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const interval: PlanInterval = body.interval === "year" ? "year" : "month";
   const quantity = Math.max(1, await countSites(firm.id));
+  const trialDays =
+    firm.subscription_status === "trialing" ? trialDaysLeft(firm) : 0;
 
   if (stripeConfigured()) {
     try {
@@ -22,6 +25,7 @@ export async function POST(req: NextRequest) {
         interval,
         email: user.email,
         baseUrl: baseUrl(),
+        trialDays,
       });
       return NextResponse.json({ mode: "stripe", url });
     } catch (err) {

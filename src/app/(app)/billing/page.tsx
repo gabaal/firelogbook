@@ -18,7 +18,9 @@ export default async function BillingPage({
   const sites = await countSites(firm.id);
   const status = statusCopy(firm);
   const active = firmIsActive(firm);
-  const subscribed = firm.subscription_status === "active";
+  // A trialing subscription created by checkout has a Stripe subscription id,
+  // so the card is already saved and "subscribed" means manage, not buy again.
+  const subscribed = Boolean(firm.stripe_subscription_id);
   const demo = firm.subscription_status === "demo";
   const live = stripeConfigured();
 
@@ -50,7 +52,11 @@ export default async function BillingPage({
       {params.activated === "1" && (
         <p className="note-box" style={{ marginBottom: 18 }}>
           <Check size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
-          Subscription started. Thank you — your logbooks are live.
+          {firm.subscription_status === "trialing" && trialDaysLeft(firm) > 0
+            ? `Payment method saved. Your trial continues for ${trialDaysLeft(firm)} more day${
+                trialDaysLeft(firm) === 1 ? "" : "s"
+              }, then billing starts automatically.`
+            : "Subscription started. Thank you — your logbooks are live."}
         </p>
       )}
 
@@ -114,6 +120,9 @@ export default async function BillingPage({
             {firm.subscription_status === "trialing" && (
               <p className="small" style={{ marginTop: 10 }}>
                 Trial ends in <strong>{trialDaysLeft(firm)} days</strong>.
+                {firm.stripe_customer_id
+                  ? " Your card is saved; the first payment is taken then."
+                  : " Subscribe before then to keep recording."}
               </p>
             )}
             {firm.current_period_end && firm.subscription_status === "active" && (
