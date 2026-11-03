@@ -10,7 +10,15 @@ export type MailMode = "email" | "outbox";
  * exercised without a provider. Outbox mode must never be left on in production.
  */
 export function mailMode(): MailMode {
-  return process.env.BREVO_API_KEY ? "email" : "outbox";
+  return brevoKey() ? "email" : "outbox";
+}
+
+/** Tolerates a key pasted with surrounding quotes or a trailing newline. */
+function brevoKey(): string {
+  return (process.env.BREVO_API_KEY ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .trim();
 }
 
 const DEFAULT_FROM = "FireLogbook <hello@firelogbook.local>";
@@ -39,7 +47,7 @@ async function sendViaBrevo(input: MailInput): Promise<void> {
   const res = await fetch(BREVO_ENDPOINT, {
     method: "POST",
     headers: {
-      "api-key": process.env.BREVO_API_KEY as string,
+      "api-key": brevoKey(),
       "content-type": "application/json",
       accept: "application/json",
     },
@@ -61,7 +69,10 @@ async function sendViaBrevo(input: MailInput): Promise<void> {
       // Brevo occasionally answers with a non-JSON body.
     }
     throw new Error(
-      `Brevo rejected the message (${res.status}${detail ? `: ${detail}` : ""})`,
+      `Brevo rejected the message (${res.status}${detail ? `: ${detail}` : ""})` +
+        (res.status === 401
+          ? ". BREVO_API_KEY must be a v3 API key from SMTP & API → API Keys (it starts with xkeysib-), not the SMTP password."
+          : ""),
     );
   }
 }
