@@ -4,6 +4,7 @@ import { requireActiveFirm } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ArrowLeft, Mail, Send } from "@/components/icons";
 import { revalidatePath } from "next/cache";
+import { mailMode } from "@/lib/mail";
 import { desc } from "drizzle-orm";
 import * as schema from "@/lib/schema";
 
@@ -27,7 +28,7 @@ export default async function OutboxPage() {
       <div className="row-between" style={{ marginBottom: 24 }}>
         <h1 className="h-page">Email Outbox</h1>
         <p className="small muted">
-          {firm.subscription_status === "demo" || !process.env.RESEND_API_KEY
+          {firm.subscription_status === "demo" || mailMode() === "outbox"
             ? "Local mode: Emails are queued here instead of being sent."
             : "Sent emails log."}
         </p>

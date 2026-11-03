@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb, type FirmRow, type NotificationRow, type SiteRow } from "./db";
-import { baseUrl, sendMail } from "./mail";
+import { baseUrl, mailMode, sendMail } from "./mail";
 import { actionsForSite, listSites, updateFirm } from "./data";
 import { itemStatuses } from "./due";
 import { fmtDate } from "./format";
@@ -321,22 +321,38 @@ export async function runReminders(options: {
       }
 
       const id = randomUUID();
-      await db.insert(schema.notifications).values({
-        id,
-        firm_id: firm.id,
-        site_id: site.id,
-        level: plan.level,
-        week_key: weekKey,
-        to_addr: plan.recipient,
-        subject: plan.subject,
-        body: plan.body,
-        channel: process.env.RESEND_API_KEY ? "email" : "outbox",
-        status: "pending",
-        created_at: new Date(),
-      });
+      // The unique index on (site_id, level, week_key) makes a second pass in
+      // the same week a no-op rather than a duplicate send.
+      const inserted = await db
+        .insert(schema.notifications)
+        .values({
+          id,
+          firm_id: firm.id,
+          site_id: site.id,
+          level: plan.level,
+          week_key: weekKey,
+          to_addr: plan.recipient,
+          subject: plan.subject,
+          body: plan.body,
+          channel: mailMode() === "email" ? "email" : "outbox",
+          status: "pending",
+          created_at: new Date(),
+        })
+        .onConflictDoNothing()
+        .returning({ id: schema.notifications.id });
 
-      // Drizzle's .run() for inserts doesn't return "changes" in the same way as SQLite
-      // We'll assume success if no error was thrown.
+      if (inserted.length === 0) {
+        result.skipped += 1;
+        result.items.push({
+          site: site.name,
+          level: plan.level,
+          to: plan.recipient,
+          status: "skipped",
+          subject: plan.subject,
+        });
+        continue;
+      }
+
       try {
         const { mode } = await sendMail({
           to: plan.recipient,
@@ -417,10 +433,10 @@ export async function previewForFirm(firm: FirmRow, now = new Date()): Promise<P
   return plans.filter((p): p is PlannedReminder => p !== null);
 }
 
-export function updateReminderSettings(
+export async function updateReminderSettings(
   firmId: string,
   settings: { enabled?: boolean; day?: number; hour?: number },
-): void {
+): Promise<void> {
   const patch: Partial<FirmRow> = {};
   if (typeof settings.enabled === "boolean") {
     patch.reminders_enabled = settings.enabled ? 1 : 0;
@@ -428,8 +444,9 @@ export function updateReminderSettings(
   if (settings.day && settings.day >= 1 && settings.day <= 7) {
     patch.reminder_day = settings.day;
   }
-  if (typeof settings.hour === "number" && settings.hour >= 0 && settings.hour <= 23) {
+  // The daily cron runs at 10:00 UTC, so a later hour could never fire.
+  if (typeof settings.hour === "number" && settings.hour >= 0 && settings.hour <= 10) {
     patch.reminder_hour = settings.hour;
   }
-  updateFirm(firmId, patch);
+  await updateFirm(firmId, patch);
 }

@@ -79,11 +79,13 @@ magnet and not fine for anything that matters.
 30 days, revocable rows in `sessions`) creates the user, firm and owner membership
 on first verify. Sessions are DB-backed so they can be killed server-side.
 
-**Email is swappable.** With `RESEND_API_KEY` set, links and reminders go through
-Resend. Without it the app runs in *outbox mode*: messages land in the `outbox`
-table and the sign-in screen shows the link so the flow is walkable locally.
-Outbox mode must never run on a public deployment — it is the one place the app
-hands out a login link.
+**Email is swappable.** With `BREVO_API_KEY` set, links and reminders go through
+Brevo (`MAIL_FROM` must be a sender verified in the Brevo dashboard). Without it
+the app runs in *outbox mode*: messages land in the `outbox` table and the
+sign-in screen shows the link so the flow is walkable locally. Outbox mode must
+never run on a public deployment — it is the one place the app hands out a login
+link. The Reminders page has a "Send a test email" button for checking the Brevo
+setup without touching customer data.
 
 **Tenancy.** Every site lookup is `WHERE id = ? AND firm_id = ?`. The write APIs
 (`/api/checks`, `/api/actions/[id]/close`, `/api/digest`, `/api/onboarding`) all
@@ -126,8 +128,12 @@ required. Opted-out sites drop out of the plan entirely.
 read at `/reminders/[id]`, which is what you show a customer who asks "what did you
 actually send me?".
 
-Locally this runs in outbox mode; set `RESEND_API_KEY` and the same code sends for
-real. A daily cron on the host is enough:
+Locally this runs in outbox mode; set `BREVO_API_KEY` and `MAIL_FROM` and the
+same code sends for real. In production `vercel.json` schedules a daily run at
+10:00 UTC (Vercel Hobby allows one cron run per day), which is after every hour
+the UI offers, so the chosen hour is the earliest a reminder can go out. Set
+`CRON_SECRET` in the Vercel project and Vercel sends it automatically as the
+bearer token. Any other scheduler can call the same route:
 
 ```bash
 CRON_SECRET=... curl -fsS -X POST https://your-domain/api/cron/reminders \

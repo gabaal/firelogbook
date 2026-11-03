@@ -94,7 +94,7 @@ export default function ReminderSettings({
         </label>
 
         <label className="field">
-          <span className="label">At</span>
+          <span className="label">Send after</span>
           <select
             className="select"
             value={h}
@@ -119,7 +119,7 @@ export default function ReminderSettings({
           ? "Saving…"
           : state === "saved"
             ? "Saved."
-            : "Times are UK local. One email per site per week, per escalation step."}
+            : "Times are UK local. The daily run sends at 10:00 UTC, so this is the earliest a reminder can go out. One email per site per week, per escalation step."}
       </p>
     </div>
   );

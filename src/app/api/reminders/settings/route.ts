@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const day = Number(body.day);
   const hour = Number(body.hour);
 
-  updateReminderSettings(firm.id, {
+  await updateReminderSettings(firm.id, {
     enabled: Boolean(body.enabled),
     day: Number.isFinite(day) ? day : undefined,
     hour: Number.isFinite(hour) ? hour : undefined,

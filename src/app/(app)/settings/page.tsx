@@ -69,7 +69,10 @@ export default async function SettingsPage() {
               "use server";
               const name = formData.get("firmName") as string;
               const reminderDay = parseInt(formData.get("reminderDay") as string);
-              const reminderHour = parseInt(formData.get("reminderHour") as string);
+              const reminderHour = Math.min(
+                10,
+                Math.max(0, parseInt(formData.get("reminderHour") as string) || 0),
+              );
 
               await db.update(schema.firms)
                 .set({ name, reminder_day: reminderDay, reminder_hour: reminderHour })
@@ -99,12 +102,12 @@ export default async function SettingsPage() {
                   </select>
                 </label>
                 <label className="field" style={{ flex: 1 }}>
-                  <span className="label">Reminder Hour (24h)</span>
+                  <span className="label">Reminder Hour (UK, 0–10)</span>
                   <input
                     name="reminderHour"
                     type="number"
                     min="0"
-                    max="23"
+                    max="10"
                     defaultValue={firm.reminder_hour}
                     className="input"
                   />
