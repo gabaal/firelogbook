@@ -1,5 +1,6 @@
 import { CHECKLIST, FREQUENCIES, type CheckItem } from "./checklist";
 import { ensureSchema, getDb } from "./db";
+import { DEMO_EMAIL, DEMO_FIRM_ID } from "./demo";
 import * as schema from "./schema";
 import { asc, eq } from "drizzle-orm";
 
@@ -176,9 +177,6 @@ function dateAt(daysAgo: number, hour: number, minute: number): Date {
   return d;
 }
 
-export const DEMO_FIRM_ID = "firm-marshvale";
-const DEMO_EMAIL = "anya@marshvale.example";
-
 let seeding: Promise<void> | null = null;
 
 /**
@@ -214,6 +212,18 @@ async function seedDemo(): Promise<void> {
         subscription_status: "demo",
       })
       .onConflictDoNothing();
+  } else if (firm.subscription_status !== "demo") {
+    // The sample account is always free, whatever a billing experiment did to it.
+    await db
+      .update(schema.firms)
+      .set({
+        subscription_status: "demo",
+        plan_interval: null,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        current_period_end: null,
+      })
+      .where(eq(schema.firms.id, DEMO_FIRM_ID));
   }
 
   let user = await db.query.users.findFirst({

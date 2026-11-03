@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { DEMO_FIRM_ID } from "./demo";
 import { eq, asc, desc, or, and, sql } from "drizzle-orm";
 import * as schema from "./schema";
 export { db as getDb };
@@ -15,8 +16,7 @@ export async function getFirm(firmId: string): Promise<schema.FirmRow | null> {
 
 export async function demoFirm(): Promise<schema.FirmRow | null> {
   return await db.query.firms.findFirst({
-    where: eq(schema.firms.subscription_status, "demo"),
-    limit: 1 as never,
+    where: eq(schema.firms.id, DEMO_FIRM_ID),
   }) ?? null;
 }
 

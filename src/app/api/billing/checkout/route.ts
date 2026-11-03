@@ -35,7 +35,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // No Stripe configured: simulate an activation so the flow is walkable.
+  // No Stripe configured: simulate an activation locally only. In production
+  // this would hand out a free subscription, so fail closed instead.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Payments are not configured yet." },
+      { status: 503 },
+    );
+  }
+
   const periodEnd = new Date(
     Date.now() + (interval === "year" ? 365 : 30) * 86_400_000,
   ).toISOString();

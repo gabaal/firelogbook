@@ -17,7 +17,14 @@ export async function POST() {
     );
   }
 
-  updateFirm(firm.id, {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Payments are not configured yet." },
+      { status: 503 },
+    );
+  }
+
+  await updateFirm(firm.id, {
     subscription_status: "canceled",
     current_period_end: null,
   });
