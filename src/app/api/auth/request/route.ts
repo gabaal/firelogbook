@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createLoginToken } from "@/lib/auth";
 import { baseUrl, mailMode, sendMail } from "@/lib/mail";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { getDb } from "@/lib/db";
 import { eq, sql, and } from "drizzle-orm";
 import * as schema from "@/lib/schema";
@@ -13,6 +14,23 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
+
+  // Cap every request from one connection, valid address or not, so the
+  // endpoint cannot be used to bomb arbitrary inboxes.
+  const ipLimit = await rateLimit(
+    `auth:request:${clientIp(req)}`,
+    10,
+    60 * 60_000,
+  );
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many sign-in requests from this connection. Try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+      },
+    );
+  }
 
   if (!EMAIL.test(email) || email.length > 160) {
     return NextResponse.json({ error: "That does not look like an email address" }, { status: 422 });

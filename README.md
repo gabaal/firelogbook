@@ -70,14 +70,15 @@ The point is not charity:
 - it captures an email at the exact moment somebody is setting up a logbook;
 - it can say, honestly, that paper cannot tell you a check is three weeks late.
 
-Throttled in memory at five log books per IP per hour. That is fine for a lead
-magnet and not fine for anything that matters.
+Throttled in Postgres at five log books per IP per hour (`rate_limits`), so the
+limit holds across serverless instances rather than living in one process.
 
 ## Gate A: charging and onboarding
 
 **Accounts without passwords.** `/signin` only emails a magic link — there is no
 way to create a session by typing an address. The link is single-use, expires in
-20 minutes, and the token is consumed atomically. Verifying it creates the user,
+20 minutes, and the token is consumed atomically. Requests are capped at ten per
+IP per hour and one per address per minute. Verifying the link creates the user,
 firm and owner membership on first use. Sessions are HMAC-signed cookies (30
 days, revocable rows in `sessions`) and `SESSION_SECRET` (32+ characters) is
 **required in production**; the same key signs share and unsubscribe links.

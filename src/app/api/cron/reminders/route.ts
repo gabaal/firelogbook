@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { runReminders } from "@/lib/reminders";
 import { processNextPdfJob } from "@/lib/pdf-worker";
+import { cleanupRateLimits } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +39,12 @@ async function handle(req: NextRequest) {
 
   // Trigger PDF worker: process one job per cron hit
   await processNextPdfJob(req.nextUrl.origin);
+
+  try {
+    await cleanupRateLimits();
+  } catch (error) {
+    console.error("cron: could not clean rate-limit rows", error);
+  }
 
   revalidatePath("/reminders");
   return NextResponse.json(result);

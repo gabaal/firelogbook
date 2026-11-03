@@ -110,6 +110,12 @@ const SCHEMA_SQL = [
     created_at timestamp NOT NULL,
     used_at timestamp
   )`,
+  `CREATE TABLE IF NOT EXISTS rate_limits (
+    key text PRIMARY KEY,
+    window_start timestamp NOT NULL,
+    count integer NOT NULL DEFAULT 0
+  )`,
+  `CREATE INDEX IF NOT EXISTS rate_limits_window_start_idx ON rate_limits (window_start)`,
   `CREATE TABLE IF NOT EXISTS sessions (
     id text PRIMARY KEY,
     user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,

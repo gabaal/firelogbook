@@ -1,37 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createLead } from "@/lib/leads";
 import { baseUrl, mailMode, sendMail } from "@/lib/mail";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// Crude per-process throttle. Enough to stop a script filling the table.
-const recent = new Map<string, number[]>();
-
-function throttled(key: string): boolean {
-  const now = Date.now();
-  const hits = (recent.get(key) ?? []).filter((t) => now - t < 60 * 60_000);
-  if (hits.length >= 5) {
-    recent.set(key, hits);
-    return true;
-  }
-  hits.push(now);
-  recent.set(key, hits);
-  return false;
-}
-
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "local";
-
-  if (throttled(ip)) {
+  const ip = clientIp(req);
+  const limited = await rateLimit(`lead:${ip}`, 5, 60 * 60_000);
+  if (!limited.allowed) {
     return NextResponse.json(
       { error: "That is a lot of logbooks. Try again later." },
-      { status: 429 },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limited.retryAfterSeconds) },
+      },
     );
   }
 

@@ -114,6 +114,12 @@ export const login_tokens = pgTable("login_tokens", {
   used_at: timestamp("used_at"),
 });
 
+export const rate_limits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  window_start: timestamp("window_start").notNull(),
+  count: integer("count").notNull().default(0),
+});
+
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
