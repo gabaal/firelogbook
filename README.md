@@ -39,6 +39,8 @@ SQLite seeding code and is not run automatically.
 | `/` | Landing page with the £29/site/month offer |
 | `/free-logbook` | Public lead magnet: build a printable blank log book |
 | `/free-logbook/[id]` | The generated six-page A4 log book |
+| `/checks` | Public guide to the 13 checks, grouped by frequency |
+| `/checks/[key]` | Landing page for one check: why, how often, what to record |
 | `/signin` | Passwordless sign-in and the demo button |
 | `/onboarding` | Three fields → site created → first audit pack |
 | `/sites` | Portfolio dashboard: overdue, due, open actions |
