@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       address,
       postcode,
       responsiblePerson,
+      marketingConsent: body.marketingConsent === true,
     });
 
     await trackEvent("free_logbook_lead", {

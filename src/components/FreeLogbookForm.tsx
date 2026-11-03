@@ -11,6 +11,7 @@ export default function FreeLogbookForm() {
     email: "",
   });
   const [busy, setBusy] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ link: string; emailed: boolean; mailMode: string } | null>(null);
 
@@ -26,7 +27,7 @@ export default function FreeLogbookForm() {
       const res = await fetch("/api/free-logbook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, marketingConsent }),
       });
       // A crashed serverless function can return an empty body, which makes
       // res.json() throw "Unexpected end of JSON input". Read text first.
@@ -162,6 +163,24 @@ export default function FreeLogbookForm() {
           We send you the link so you can print it later. No account, no card.
         </span>
       </label>
+
+      {values.email.trim() !== "" && (
+        <label
+          className="row"
+          style={{ gap: 10, alignItems: "flex-start", cursor: "pointer", marginTop: 2 }}
+        >
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(e) => setMarketingConsent(e.target.checked)}
+            style={{ marginTop: 3, width: 17, height: 17 }}
+          />
+          <span className="tiny muted">
+            Also send me occasional fire-safety tips and updates about
+            FireLogbook. Unsubscribe at any time.
+          </span>
+        </label>
+      )}
 
       {error && (
         <p className="small" style={{ color: "var(--bad)", fontWeight: 550 }}>

@@ -166,7 +166,22 @@ const SCHEMA_SQL = [
     postcode text NOT NULL DEFAULT '',
     responsible_person text NOT NULL DEFAULT '',
     source text NOT NULL DEFAULT 'free-logbook',
+    marketing_consent integer NOT NULL DEFAULT 0,
+    nurture_opt_out integer NOT NULL DEFAULT 0,
+    converted_at timestamp,
     created_at timestamp NOT NULL
+  )`,
+  // Tables created before the nurture fields existed.
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS marketing_consent integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS nurture_opt_out integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS converted_at timestamp`,
+  `CREATE TABLE IF NOT EXISTS lead_nurture (
+    id text PRIMARY KEY,
+    lead_id text NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    step integer NOT NULL,
+    status text NOT NULL,
+    created_at timestamp NOT NULL,
+    UNIQUE(lead_id, step)
   )`,
   `CREATE TABLE IF NOT EXISTS outbox (
     id text PRIMARY KEY,

@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { runReminders } from "@/lib/reminders";
 import { processNextPdfJob } from "@/lib/pdf-worker";
 import { cleanupRateLimits } from "@/lib/rate-limit";
+import { runLeadNurture } from "@/lib/nurture";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,17 @@ async function handle(req: NextRequest) {
 
   const result = await runReminders({ firm: auth.firm, dryRun, force });
 
+  // The daily machine run also sends the free-log-book nurture sequence.
+  // Owners get a preview on a dry run, but never trigger marketing sends.
+  let nurture = null;
+  if (auth.firm === undefined || dryRun) {
+    try {
+      nurture = await runLeadNurture({ dryRun });
+    } catch (error) {
+      console.error("cron: lead nurture failed", error);
+    }
+  }
+
   // Trigger PDF worker: process one job per cron hit
   await processNextPdfJob(req.nextUrl.origin);
 
@@ -47,7 +59,7 @@ async function handle(req: NextRequest) {
   }
 
   revalidatePath("/reminders");
-  return NextResponse.json(result);
+  return NextResponse.json({ ...result, nurture });
 }
 
 export async function GET(req: NextRequest) {

@@ -52,6 +52,7 @@ SQLite seeding code and is not run automatically.
 | `/reminders` | Schedule, escalation ladder, what would send now, send log |
 | `/reminders/[id]` | The exact email that went out |
 | `/unsubscribe` | Confirm opt-out from an email, no sign-in |
+| `/lead-unsubscribe` | Confirm opt-out from the lead nurture emails (noindex) |
 | `/analytics` | Operator dashboard, limited to `ADMIN_EMAILS` |
 | `/api/audit/[id]/pdf` | Rendered A4 PDF (auth cookie or share token) |
 
@@ -75,6 +76,12 @@ The point is not charity:
 
 Throttled in Postgres at five log books per IP per hour (`rate_limits`), so the
 limit holds across serverless instances rather than living in one process.
+
+**Nurture, only with consent.** The form's marketing checkbox is unticked by
+default. Consented leads enter a four-email sequence at days 2, 7, 14 and 21,
+run by the daily cron; every email carries a signed unsubscribe link confirmed
+by POST, and the sequence stops as soon as that address becomes an account.
+Leads and sends live in `leads` and `lead_nurture`.
 
 ## Gate A: charging and onboarding
 

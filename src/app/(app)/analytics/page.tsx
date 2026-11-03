@@ -19,6 +19,9 @@ const LABELS: Record<string, string> = {
   audit_pdf: "Audit PDF",
   free_logbook_lead: "Free log book lead",
   free_logbook_pdf: "Free log book PDF",
+  lead_nurture_sent: "Nurture email sent",
+  lead_nurture_unsubscribed: "Nurture unsubscribe",
+  lead_converted: "Lead converted",
   checkout_started: "Checkout started",
   checkout_completed: "Checkout completed",
   subscription_status: "Subscription status",
@@ -144,6 +147,7 @@ export default async function AnalyticsPage() {
         {tile("Checks recorded", byName.get("check_recorded") ?? 0, "last 30 days")}
         {tile("Checkouts started", byName.get("checkout_started") ?? 0, "last 30 days")}
         {tile("Free log books", Number(leadRows[0]?.count ?? 0), "all time")}
+        {tile("Nurture emails", byName.get("lead_nurture_sent") ?? 0, "last 30 days")}
       </div>
 
       <div

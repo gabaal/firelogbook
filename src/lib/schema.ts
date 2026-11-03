@@ -171,9 +171,21 @@ export const leads = pgTable("leads", {
   postcode: text("postcode").notNull().default(""),
   responsible_person: text("responsible_person").notNull().default(""),
   source: text("source").notNull().default("free-logbook"),
+  marketing_consent: integer("marketing_consent").notNull().default(0),
+  nurture_opt_out: integer("nurture_opt_out").notNull().default(0),
+  converted_at: timestamp("converted_at"),
   created_at: timestamp("created_at").notNull(),
 });
 export type LeadRow = typeof leads.$inferSelect;
+
+export const lead_nurture = pgTable("lead_nurture", {
+  id: text("id").primaryKey(),
+  lead_id: text("lead_id").notNull().references(() => leads.id, { onDelete: "cascade" }),
+  step: integer("step").notNull(),
+  status: text("status").notNull(),
+  created_at: timestamp("created_at").notNull(),
+});
+export type LeadNurtureRow = typeof lead_nurture.$inferSelect;
 
 export const outbox = pgTable("outbox", {
   id: text("id").primaryKey(),

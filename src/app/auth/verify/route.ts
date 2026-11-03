@@ -6,6 +6,7 @@ import {
   createSession,
 } from "@/lib/auth";
 import { countSites } from "@/lib/data";
+import { markLeadConverted } from "@/lib/leads";
 import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest) {
 
   const { user, firm, created } = await ensureAccount(email);
   if (created) await trackEvent("signup", { firmId: firm.id });
+  await markLeadConverted(email);
   const cookieValue = await createSession(user.id, firm.id);
   const destination = (await countSites(firm.id)) === 0 ? "/onboarding" : "/sites";
 

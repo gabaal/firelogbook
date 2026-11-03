@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/outbox",
           "/analytics",
           "/unsubscribe",
+          "/lead-unsubscribe",
           // The printable log book itself is per-lead; the form is public.
           "/free-logbook/",
           "/auth/",
