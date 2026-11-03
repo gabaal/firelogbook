@@ -49,7 +49,7 @@ SQLite seeding code and is not run automatically.
 | `/billing` | Trial state, per-site pricing, checkout, cancellation |
 | `/reminders` | Schedule, escalation ladder, what would send now, send log |
 | `/reminders/[id]` | The exact email that went out |
-| `/unsubscribe` | One-click opt-out from an email, no sign-in |
+| `/unsubscribe` | Confirm opt-out from an email, no sign-in |
 | `/api/audit/[id]/pdf` | Rendered A4 PDF (auth cookie or share token) |
 
 ## The free log book (top of funnel)
@@ -126,7 +126,9 @@ can also call it — that is what the "Send now" button does, with `?force=1`.
 `?dry=1` returns the plan without writing anything.
 
 **Opt-out that works on a phone.** Signed, non-expiring token per site, no login
-required. Opted-out sites drop out of the plan entirely.
+required. The link opens a confirmation page and only the POST behind the button
+opts the site out, so mail scanners that prefetch GETs cannot do it for the
+recipient. Opted-out sites drop out of the plan entirely.
 
 **Every message is kept.** The body is stored verbatim in `notifications` and can be
 read at `/reminders/[id]`, which is what you show a customer who asks "what did you

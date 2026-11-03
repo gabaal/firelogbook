@@ -168,8 +168,8 @@ check("other firm's PDF is refused", foreignPdf.status === 404, String(foreignPd
 
 // 13. Share link works without a session
 const { createHmac } = await import("node:crypto");
-const { readFileSync } = await import("node:fs");
-const secret = readFileSync("data/session.key", "utf8").trim();
+const secret =
+  process.env.SESSION_SECRET?.trim() || "fallback-secret-for-dev-only";
 const payload = Buffer.from(
   JSON.stringify({ s: siteId, e: Date.now() + 60 * 60 * 1000 }),
 ).toString("base64url");
@@ -242,12 +242,24 @@ check(
 // 16. Unsubscribe link
 const unsubPayload = Buffer.from(JSON.stringify({ s: "site-kingsdown" })).toString("base64url");
 const unsubSig = createHmac("sha256", secret).update(unsubPayload).digest("base64url");
-const unsub = await call(`/unsubscribe?t=${encodeURIComponent(`${unsubPayload}.${unsubSig}`)}`);
+const unsubToken = `${unsubPayload}.${unsubSig}`;
+const unsub = await call(`/unsubscribe?t=${encodeURIComponent(unsubToken)}`);
 const unsubHtml = await unsub.text();
 check(
-  "unsubscribe link works without a session",
-  unsub.status === 200 && unsubHtml.includes("Reminders for"),
+  "unsubscribe link asks before opting out",
+  unsub.status === 200 && unsubHtml.includes("Stop reminders for"),
   String(unsub.status),
+);
+
+const unsubConfirm = await call("/api/unsubscribe", {
+  method: "POST",
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  body: new URLSearchParams({ t: unsubToken }).toString(),
+});
+check(
+  "confirming the unsubscribe opts the site out",
+  unsubConfirm.status === 303,
+  String(unsubConfirm.status),
 );
 
 const dryAfter = await call("/api/cron/reminders?dry=1&force=1", { method: "POST" });
