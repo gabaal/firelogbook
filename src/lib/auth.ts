@@ -227,14 +227,3 @@ export function verifyShareToken(token: string, siteId: string): boolean {
   if (!data) return false;
   return data.s === siteId && data.e > Date.now();
 }
-
-export async function requireRole(role: "owner" | "admin" | "member", session: AuthContext) {
-  const roles: Record<string, number> = {
-    owner: 3,
-    admin: 2,
-    member: 1,
-  };
-  if (roles[session.membership.role] < roles[role]) {
-    redirect("/dashboard");
-  }
-}

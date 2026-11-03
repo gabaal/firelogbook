@@ -185,46 +185,6 @@ export async function createSite(input: {
   return site;
 }
 
-export async function insertPdfJob(input: {
-  siteId: string;
-  params: string;
-}): Promise<string> {
-  const id = crypto.randomUUID();
-  await db.insert(schema.pdf_jobs).values({
-    id,
-    site_id: input.siteId,
-    params: input.params,
-    status: "queued",
-    created_at: new Date(),
-  });
-  return id;
-}
-
-export async function updatePdfJob(id: string, patch: Partial<{
-  status: string;
-  file_path: string | null;
-  completed_at: Date | null;
-}>): Promise<void> {
-  if (Object.keys(patch).length === 0) return;
-  await db.update(schema.pdf_jobs)
-    .set(patch)
-    .where(eq(schema.pdf_jobs.id, id));
-}
-
-export async function getPdfJob(id: string) {
-  return await db.query.pdf_jobs.findFirst({
-    where: eq(schema.pdf_jobs.id, id),
-  });
-}
-
-export async function getNextPdfJob() {
-  return await db.query.pdf_jobs.findFirst({
-    where: eq(schema.pdf_jobs.status, "queued"),
-    limit: 1 as never,
-  });
-}
-
-
 export async function checksForSite(siteId: string, limit?: number): Promise<schema.CheckRow[]> {
   return await db.query.checks.findMany({
     where: eq(schema.checks.site_id, siteId),

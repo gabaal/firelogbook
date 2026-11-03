@@ -29,10 +29,12 @@ a Blob store, production stores photos in the Neon `check_photos` table and serv
 them from `/api/photos/[id]`; local development uses `/tmp/uploads` and
 `/api/uploads/[name]`. Connect a Blob store before the table gets large.
 
-The free-logbook and email paths create any missing tables lazily with
-`CREATE TABLE IF NOT EXISTS`, so a fresh database works without a separate
-migration step. They do not seed demo data: `src/lib/seed.ts` still holds the old
-SQLite seeding code and is not run automatically.
+Schema changes are versioned in `src/lib/migrations.ts`. `ensureSchema()` applies
+any migration not yet recorded in `schema_migrations`, once per process, before
+the first query that needs a table — so a fresh database works without a separate
+migration step. Append a migration rather than editing one that has shipped.
+The database is not seeded with demo data: `src/lib/seed.ts` still holds the old
+SQLite seeding code and is only run by the demo sign-in.
 
 | Route | What it shows |
 | --- | --- |
@@ -161,8 +163,12 @@ CRON_SECRET=... curl -fsS -X POST https://your-domain/api/cron/reminders \
 ## Verifying it
 
 ```bash
-node scripts/e2e.mjs        # 36 assertions against a running server
+pnpm test                    # unit tests: billing rules, signed tokens, check content
+node scripts/e2e.mjs         # 36 assertions against a running server
 ```
+
+The unit tests use Node's test runner through `tsx` and need no database. The
+end-to-end script needs a running server and a database.
 
 Covers: public vs protected routes, magic-link → session → onboarding, first audit
 pack, trial state, simulated checkout, recording a check, PDF export, cross-firm

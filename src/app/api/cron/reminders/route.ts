@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { runReminders } from "@/lib/reminders";
-import { processNextPdfJob } from "@/lib/pdf-worker";
 import { cleanupRateLimits } from "@/lib/rate-limit";
 import { runLeadNurture } from "@/lib/nurture";
 
@@ -48,9 +47,6 @@ async function handle(req: NextRequest) {
       console.error("cron: lead nurture failed", error);
     }
   }
-
-  // Trigger PDF worker: process one job per cron hit
-  await processNextPdfJob(req.nextUrl.origin);
 
   try {
     await cleanupRateLimits();

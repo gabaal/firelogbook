@@ -152,14 +152,9 @@ export const notifications = pgTable("notifications", {
   created_at: timestamp("created_at").notNull(),
 });
 
-export const pdf_jobs = pgTable("pdf_jobs", {
+export const schema_migrations = pgTable("schema_migrations", {
   id: text("id").primaryKey(),
-  site_id: text("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
-  params: text("params").notNull(),
-  status: text("status").notNull().default("queued"),
-  file_path: text("file_path"),
-  created_at: timestamp("created_at").notNull(),
-  completed_at: timestamp("completed_at"),
+  applied_at: timestamp("applied_at").notNull(),
 });
 
 export const leads = pgTable("leads", {
