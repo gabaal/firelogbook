@@ -21,7 +21,12 @@ interface StripeEvent {
       metadata?: { firm_id?: string };
       client_reference_id?: string;
       // Newer API versions moved the period end onto the subscription item.
-      items?: { data?: Array<{ current_period_end?: number }> };
+      items?: {
+        data?: Array<{
+          current_period_end?: number;
+          price?: { recurring?: { interval?: string } };
+        }>;
+      };
     };
   };
 }
@@ -33,6 +38,13 @@ function periodEndOf(object: StripeEvent["data"]["object"]): number | null {
     object.items?.data?.[0]?.current_period_end ??
     null
   );
+}
+
+function planIntervalOf(
+  object: StripeEvent["data"]["object"],
+): "month" | "year" | null {
+  const interval = object.items?.data?.[0]?.price?.recurring?.interval;
+  return interval === "month" || interval === "year" ? interval : null;
 }
 
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
@@ -117,6 +129,7 @@ export async function POST(req: NextRequest) {
       const periodEnd = periodEndOf(object);
       await updateFirm(firm.id, {
         subscription_status: status,
+        plan_interval: planIntervalOf(object) ?? firm.plan_interval,
         stripe_subscription_id: object.id ?? firm.stripe_subscription_id,
         stripe_customer_id: object.customer ?? firm.stripe_customer_id,
         current_period_end: periodEnd
