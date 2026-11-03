@@ -11,6 +11,7 @@ import { renderAuditPdf } from "@/lib/audit-pdf";
 import { photoDataUri } from "@/lib/photo";
 import { endOfDayIso, inputDate, startOfDayIso } from "@/lib/format";
 import { slugify } from "@/lib/print";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,6 +97,12 @@ export async function GET(
     });
 
     const filename = `fire-audit-${slugify(site.name) || "site"}-${inputDate(from)}.pdf`;
+
+    await trackEvent("audit_pdf", {
+      firmId: site.firm_id,
+      siteId: site.id,
+      props: { shared: Boolean(shareToken) },
+    });
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

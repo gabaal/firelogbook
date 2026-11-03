@@ -116,6 +116,16 @@ const SCHEMA_SQL = [
     count integer NOT NULL DEFAULT 0
   )`,
   `CREATE INDEX IF NOT EXISTS rate_limits_window_start_idx ON rate_limits (window_start)`,
+  `CREATE TABLE IF NOT EXISTS events (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    firm_id text,
+    site_id text,
+    props text,
+    created_at timestamp NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS events_name_created_idx ON events (name, created_at)`,
+  `CREATE INDEX IF NOT EXISTS events_created_idx ON events (created_at)`,
   `CREATE TABLE IF NOT EXISTS sessions (
     id text PRIMARY KEY,
     user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,

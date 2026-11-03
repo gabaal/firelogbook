@@ -6,6 +6,7 @@ import { itemStatuses } from "./due";
 import { fmtDate } from "./format";
 import { ITEMS_BY_KEY } from "./checklist";
 import { signToken, verifyToken } from "./tokens";
+import { trackEvent } from "./analytics";
 import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "./schema";
 
@@ -362,6 +363,11 @@ export async function runReminders(options: {
         await db.update(schema.notifications)
           .set({ status: mode === "email" ? "sent" : "outbox" })
           .where(eq(schema.notifications.id, id));
+        await trackEvent("reminder_sent", {
+          firmId: firm.id,
+          siteId: site.id,
+          props: { level: plan.level, mode },
+        });
         result.sent += 1;
         result.items.push({
           site: site.name,

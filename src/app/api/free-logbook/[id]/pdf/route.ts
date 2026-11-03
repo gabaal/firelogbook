@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getLead } from "@/lib/leads";
 import { renderFreeLogbookPdf } from "@/lib/free-logbook-pdf";
 import { slugify } from "@/lib/print";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,8 @@ export async function GET(
   try {
     const pdf = await renderFreeLogbookPdf(lead);
     const filename = `fire-safety-log-book-${slugify(lead.site_name) || "premises"}.pdf`;
+
+    await trackEvent("free_logbook_pdf");
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

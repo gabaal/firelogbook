@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getInviteByToken, deleteInvite } from "@/lib/data";
 import { getDb } from "@/lib/db";
 import { createSession, SESSION_COOKIE } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/schema";
 
@@ -46,6 +47,11 @@ export async function GET(
   });
 
   await deleteInvite(invite.id);
+
+  await trackEvent("member_joined", {
+    firmId: invite.firm_id,
+    props: { role: invite.role },
+  });
 
   // Create session and sign in
   const session = await createSession(userId, invite.firm_id);

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getDb, type FirmRow } from "@/lib/db";
 import { updateFirm } from "@/lib/data";
 import { verifyWebhook } from "@/lib/stripe";
+import { trackEvent } from "@/lib/analytics";
 import type { SubscriptionStatus } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/schema";
@@ -156,6 +157,16 @@ export async function POST(req: NextRequest) {
     default:
       break;
   }
+
+  await trackEvent(
+    event.type === "checkout.session.completed"
+      ? "checkout_completed"
+      : "subscription_status",
+    {
+      firmId: firm.id,
+      props: { type: event.type, status: object.status ?? null },
+    },
+  );
 
   return NextResponse.json({ received: true, matched: true });
 }

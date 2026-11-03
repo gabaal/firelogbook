@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { firmIsActive } from "@/lib/billing";
 import { getSite, insertAction, insertCheck, getChecklistForSite } from "@/lib/data";
 import { ITEMS_BY_KEY } from "@/lib/checklist";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,6 +88,12 @@ export async function POST(req: NextRequest) {
     result: result as "pass" | "fail" | "na",
     note: note || null,
     photo,
+  });
+
+  await trackEvent("check_recorded", {
+    firmId: session.firm.id,
+    siteId,
+    props: { result, item: itemKey },
   });
 
   let actionId: string | null = null;

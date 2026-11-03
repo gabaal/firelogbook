@@ -11,6 +11,7 @@ interface Props {
   trialDays: number | null;
   pastDue: boolean;
   readOnly: boolean;
+  admin: boolean;
 }
 
 export default function AppBar({
@@ -20,6 +21,7 @@ export default function AppBar({
   trialDays,
   pastDue,
   readOnly,
+  admin,
 }: Props) {
   const pathname = usePathname() ?? "/";
   const onDashboard = pathname === "/dashboard";
@@ -78,6 +80,14 @@ export default function AppBar({
           >
             Outbox
           </Link>
+          {admin && (
+            <Link
+              href="/analytics"
+              className={pathname.startsWith("/analytics") ? "active" : undefined}
+            >
+              Analytics
+            </Link>
+          )}
           <Link
             href="/settings"
             className={onSettings ? "active" : undefined}

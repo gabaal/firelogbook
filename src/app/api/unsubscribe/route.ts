@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSiteById, setSiteOptOut } from "@/lib/data";
 import { verifyUnsubscribeToken } from "@/lib/reminders";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,13 @@ async function confirm(req: NextRequest) {
   }
 
   const site = await getSiteById(siteId);
-  if (site) await setSiteOptOut(site.id, true);
+  if (site) {
+    await setSiteOptOut(site.id, true);
+    await trackEvent("unsubscribed", {
+      firmId: site.firm_id,
+      siteId: site.id,
+    });
+  }
 
   return NextResponse.redirect(new URL("/unsubscribe?done=1", req.url), 303);
 }

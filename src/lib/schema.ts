@@ -120,6 +120,15 @@ export const rate_limits = pgTable("rate_limits", {
   count: integer("count").notNull().default(0),
 });
 
+export const events = pgTable("events", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  firm_id: text("firm_id"),
+  site_id: text("site_id"),
+  props: text("props"),
+  created_at: timestamp("created_at").notNull(),
+});
+
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),

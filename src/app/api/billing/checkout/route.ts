@@ -5,6 +5,7 @@ import { countSites, updateFirm } from "@/lib/data";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
 import type { PlanInterval } from "@/lib/billing";
 import { trialDaysLeft } from "@/lib/billing";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
         email: user.email,
         baseUrl: baseUrl(),
         trialDays,
+      });
+      await trackEvent("checkout_started", {
+        firmId: firm.id,
+        props: { interval, mode: "stripe" },
       });
       return NextResponse.json({ mode: "stripe", url });
     } catch (err) {
@@ -52,11 +57,16 @@ export async function POST(req: NextRequest) {
     Date.now() + (interval === "year" ? 365 : 30) * 86_400_000,
   ).toISOString();
 
-  updateFirm(firm.id, {
+  await updateFirm(firm.id, {
     subscription_status: "active",
     plan_interval: interval,
     stripe_subscription_id: `sub_sim_${firm.id.slice(0, 8)}`,
     current_period_end: new Date(periodEnd),
+  });
+
+  await trackEvent("checkout_started", {
+    firmId: firm.id,
+    props: { interval, mode: "simulated" },
   });
 
   return NextResponse.json({ mode: "simulated" });

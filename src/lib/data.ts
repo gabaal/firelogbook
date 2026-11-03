@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { DEMO_FIRM_ID } from "./demo";
+import { trackEvent } from "./analytics";
 import { eq, asc, desc, or, and, sql } from "drizzle-orm";
 import * as schema from "./schema";
 export { db as getDb };
@@ -177,6 +178,10 @@ export async function createSite(input: {
     created_at: new Date(),
   };
   await db.insert(schema.sites).values(site);
+  await trackEvent("site_created", {
+    firmId: input.firmId,
+    siteId: site.id,
+  });
   return site;
 }
 

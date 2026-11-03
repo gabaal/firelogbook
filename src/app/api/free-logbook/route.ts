@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createLead } from "@/lib/leads";
 import { baseUrl, mailMode, sendMail } from "@/lib/mail";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,10 @@ export async function POST(req: NextRequest) {
       address,
       postcode,
       responsiblePerson,
+    });
+
+    await trackEvent("free_logbook_lead", {
+      props: { emailed: Boolean(email) },
     });
 
     const link = `${baseUrl()}/free-logbook/${lead.id}`;

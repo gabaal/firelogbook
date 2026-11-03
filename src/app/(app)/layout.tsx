@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireFirm } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/analytics";
 import { firmIsReadOnly, trialDaysLeft } from "@/lib/billing";
 import AppBar from "@/components/AppBar";
 
@@ -27,6 +28,7 @@ export default async function AppLayout({
           firm.subscription_status === "past_due"
         }
         readOnly={readOnly}
+        admin={isAdminEmail(user.email)}
       />
 
       {readOnly && (

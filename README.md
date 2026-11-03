@@ -43,13 +43,14 @@ SQLite seeding code and is not run automatically.
 | `/onboarding` | Three fields → site created → first audit pack |
 | `/sites` | Portfolio dashboard: overdue, due, open actions |
 | `/sites/[id]` | One logbook: due now, actions, recent activity |
-| `/sites/[id]/check/[key]` | The recording screen (pass / fail / N/A, photo, name) |
+| `/sites/[id]/check/[key]` | The recording screen (pass / fail / N/A, photo, recorded as the signed-in user) |
 | `/sites/[id]/log` | Full history, filterable by check |
 | `/sites/[id]/audit` | The audit pack, date range, share link |
 | `/billing` | Trial state, per-site pricing, checkout, cancellation |
 | `/reminders` | Schedule, escalation ladder, what would send now, send log |
 | `/reminders/[id]` | The exact email that went out |
 | `/unsubscribe` | Confirm opt-out from an email, no sign-in |
+| `/analytics` | Operator dashboard, limited to `ADMIN_EMAILS` |
 | `/api/audit/[id]/pdf` | Rendered A4 PDF (auth cookie or share token) |
 
 ## The free log book (top of funnel)

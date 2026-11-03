@@ -6,6 +6,7 @@ import {
   createSession,
 } from "@/lib/auth";
 import { countSites } from "@/lib/data";
+import { trackEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/signin?error=expired", req.url));
   }
 
-  const { user, firm } = await ensureAccount(email);
+  const { user, firm, created } = await ensureAccount(email);
+  if (created) await trackEvent("signup", { firmId: firm.id });
   const cookieValue = await createSession(user.id, firm.id);
   const destination = (await countSites(firm.id)) === 0 ? "/onboarding" : "/sites";
 
