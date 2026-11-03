@@ -20,8 +20,19 @@ interface StripeEvent {
       current_period_end?: number;
       metadata?: { firm_id?: string };
       client_reference_id?: string;
+      // Newer API versions moved the period end onto the subscription item.
+      items?: { data?: Array<{ current_period_end?: number }> };
     };
   };
+}
+
+/** Reads the billing period end across Stripe API versions. */
+function periodEndOf(object: StripeEvent["data"]["object"]): number | null {
+  return (
+    object.current_period_end ??
+    object.items?.data?.[0]?.current_period_end ??
+    null
+  );
 }
 
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
@@ -103,12 +114,13 @@ export async function POST(req: NextRequest) {
     case "customer.subscription.created":
     case "customer.subscription.updated": {
       const status = STATUS_MAP[object.status ?? ""] ?? firm.subscription_status;
+      const periodEnd = periodEndOf(object);
       await updateFirm(firm.id, {
         subscription_status: status,
         stripe_subscription_id: object.id ?? firm.stripe_subscription_id,
         stripe_customer_id: object.customer ?? firm.stripe_customer_id,
-        current_period_end: object.current_period_end
-          ? new Date(object.current_period_end * 1000)
+        current_period_end: periodEnd
+          ? new Date(periodEnd * 1000)
           : firm.current_period_end,
       });
       break;
