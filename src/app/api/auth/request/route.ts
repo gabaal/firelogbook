@@ -34,24 +34,47 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Outbox mode exists for local development only. Returning the link in the
+  // response would let anyone sign in as any address, so production fails
+  // closed when no mail provider is configured.
+  const isProduction = process.env.NODE_ENV === "production";
+  if (mailMode() === "outbox" && isProduction) {
+    return NextResponse.json(
+      { error: "Sign-in email is not configured. Contact the site owner." },
+      { status: 503 },
+    );
+  }
+
   const { token } = await createLoginToken(email);
   const link = `${baseUrl()}/auth/verify?token=${encodeURIComponent(token)}`;
 
-  await sendMail({
-    to: email,
-    subject: "Your FireLogbook sign-in link",
-    text: [
-      "Use this link to sign in to FireLogbook. It expires in 20 minutes and works once.",
-      "",
-      link,
-      "",
-      "If you did not ask for this, ignore the message.",
-    ].join("\n"),
-  });
+  try {
+    await sendMail({
+      to: email,
+      subject: "Your FireLogbook sign-in link",
+      text: [
+        "Use this link to sign in to FireLogbook. It expires in 20 minutes and works once.",
+        "",
+        link,
+        "",
+        "If you did not ask for this, ignore the message.",
+      ].join("\n"),
+    });
+  } catch (err) {
+    // Do not leave a live token behind if the message could not be sent.
+    await db
+      .delete(schema.login_tokens)
+      .where(eq(schema.login_tokens.token, token));
+    console.error("signin: could not send the link", err);
+    return NextResponse.json(
+      { error: "We could not send the email. Please try again shortly." },
+      { status: 502 },
+    );
+  }
 
   return NextResponse.json({
     ok: true,
-    // Only surfaced when no mail provider is configured (local/outbox mode).
-    link: mailMode() === "outbox" ? link : undefined,
+    // Only surfaced in a local build with no mail provider configured.
+    link: !isProduction && mailMode() === "outbox" ? link : undefined,
   });
 }

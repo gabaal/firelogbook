@@ -11,7 +11,7 @@ import {
 } from "./db";
 import { firmIsActive } from "./billing";
 import { signPayload, signToken, verifyPayload, verifyToken } from "./tokens";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt, isNull } from "drizzle-orm";
 import * as schema from "./schema";
 
 export const SESSION_COOKIE = "flb_session";
@@ -127,18 +127,21 @@ export async function createLoginToken(email: string): Promise<{ token: string; 
 
 export async function consumeLoginToken(token: string): Promise<string | null> {
   const db = getDb();
-  const row = await db.query.login_tokens.findFirst({
-    where: eq(schema.login_tokens.token, token),
-  });
-
-  if (!row || row.used_at) return null;
-  if (row.expires_at.getTime() < Date.now()) return null;
-
-  await db.update(schema.login_tokens)
+  // Mark-and-read in one statement so two concurrent clicks on the same link
+  // cannot both consume it.
+  const rows = await db
+    .update(schema.login_tokens)
     .set({ used_at: new Date() })
-    .where(eq(schema.login_tokens.token, token));
+    .where(
+      and(
+        eq(schema.login_tokens.token, token),
+        isNull(schema.login_tokens.used_at),
+        gt(schema.login_tokens.expires_at, new Date()),
+      ),
+    )
+    .returning({ email: schema.login_tokens.email });
 
-  return row.email;
+  return rows[0]?.email ?? null;
 }
 
 function firmNameFromEmail(email: string): string {

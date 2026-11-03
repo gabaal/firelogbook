@@ -31,7 +31,9 @@ export async function GET(req: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: 30 * 86_400,
-    secure: req.nextUrl.protocol === "https:",
+    secure:
+      req.nextUrl.protocol === "https:" ||
+      process.env.NODE_ENV === "production",
   });
   return res;
 }
