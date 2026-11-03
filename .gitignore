@@ -5,3 +5,14 @@ build/
 .env*.local
 .DS_Store
 .pnpm-store/
+
+# Runtime state: SQLite database, uploaded photos, exported PDFs, session.key
+data/
+# Development screenshots
+shots/
+# TypeScript incremental build cache
+*.tsbuildinfo
+# Claude Code worktrees (the gitlink was added by mistake)
+.claude/worktrees/
+# pnpm is the package manager for this repo
+package-lock.json
