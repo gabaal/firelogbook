@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function FreeLogbookForm() {
@@ -177,7 +178,11 @@ export default function FreeLogbookForm() {
           />
           <span className="tiny muted">
             Also send me occasional fire-safety tips and updates about
-            FireLogbook. Unsubscribe at any time.
+            FireLogbook. Unsubscribe at any time. See our{" "}
+            <Link href="/privacy" style={{ textDecoration: "underline" }}>
+              privacy policy
+            </Link>
+            .
           </span>
         </label>
       )}

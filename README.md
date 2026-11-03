@@ -41,6 +41,8 @@ SQLite seeding code and is not run automatically.
 | `/free-logbook/[id]` | The generated six-page A4 log book |
 | `/checks` | Public guide to the 13 checks, grouped by frequency |
 | `/checks/[key]` | Landing page for one check: why, how often, what to record |
+| `/privacy` | Privacy policy (UK GDPR, processors, retention, rights) |
+| `/terms` | Terms of service (trial, billing, cancellation, liability) |
 | `/signin` | Passwordless sign-in and the demo button |
 | `/onboarding` | Three fields → site created → first audit pack |
 | `/sites` | Portfolio dashboard: overdue, due, open actions |

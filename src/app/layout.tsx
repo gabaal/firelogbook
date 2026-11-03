@@ -57,6 +57,14 @@ export default function RootLayout({
               ·{" "}
               <Link href="/free-logbook" style={{ textDecoration: "underline" }}>
                 Free printable log book
+              </Link>{" "}
+              ·{" "}
+              <Link href="/privacy" style={{ textDecoration: "underline" }}>
+                Privacy
+              </Link>{" "}
+              ·{" "}
+              <Link href="/terms" style={{ textDecoration: "underline" }}>
+                Terms
               </Link>
             </p>
             <p style={{ maxWidth: "70ch" }}>{DISCLAIMER}</p>
