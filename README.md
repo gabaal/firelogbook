@@ -75,17 +75,20 @@ magnet and not fine for anything that matters.
 
 ## Gate A: charging and onboarding
 
-**Accounts without passwords.** A signed magic link (HMAC-signed session cookie,
-30 days, revocable rows in `sessions`) creates the user, firm and owner membership
-on first verify. Sessions are DB-backed so they can be killed server-side.
+**Accounts without passwords.** `/signin` only emails a magic link — there is no
+way to create a session by typing an address. The link is single-use, expires in
+20 minutes, and the token is consumed atomically. Verifying it creates the user,
+firm and owner membership on first use. Sessions are HMAC-signed cookies (30
+days, revocable rows in `sessions`) and `SESSION_SECRET` (32+ characters) is
+**required in production**; the same key signs share and unsubscribe links.
 
 **Email is swappable.** With `BREVO_API_KEY` set, links and reminders go through
 Brevo (`MAIL_FROM` must be a sender verified in the Brevo dashboard). Without it
 the app runs in *outbox mode*: messages land in the `outbox` table and the
-sign-in screen shows the link so the flow is walkable locally. Outbox mode must
-never run on a public deployment — it is the one place the app hands out a login
-link. The Reminders page has a "Send a test email" button for checking the Brevo
-setup without touching customer data.
+sign-in screen shows the link so the flow is walkable locally. In production
+outbox mode fails closed — `/api/auth/request` returns 503 rather than handing
+out a login link. The Reminders page has a "Send a test email" button for
+checking the Brevo setup without touching customer data.
 
 **Tenancy.** Every site lookup is `WHERE id = ? AND firm_id = ?`. The write APIs
 (`/api/checks`, `/api/actions/[id]/close`, `/api/digest`, `/api/onboarding`) all

@@ -1,23 +1,29 @@
-import fs from "node:fs";
-import path from "node:path";
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { DATA_DIR } from "./db";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 let cached: string | null = null;
 
 /**
  * One secret signs session cookies, share links and unsubscribe links.
- * SESSION_SECRET wins; otherwise a key is generated into data/session.key.
+ * SESSION_SECRET is required in production (32+ characters); local development
+ * falls back to a fixed key so the app runs without configuration.
  */
 export function signingSecret(): string {
-  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-  if (cached) return cached;
+  const configured = process.env.SESSION_SECRET?.trim();
+  if (configured) {
+    if (configured.length < 32) {
+      throw new Error("SESSION_SECRET must be at least 32 characters long");
+    }
+    return configured;
+  }
 
-  // In production (Vercel), we must use an environment variable.
-  // We return a fallback secret only if SESSION_SECRET is missing.
-  const value = process.env.SESSION_SECRET || "fallback-secret-for-dev-only";
-  cached = value;
-  return value;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET is not set. Add a random 32+ character value to the environment.",
+    );
+  }
+
+  cached ??= "fallback-secret-for-dev-only";
+  return cached;
 }
 
 export function signPayload(payload: string): string {
