@@ -30,7 +30,8 @@ export default async function SettingsPage() {
           <div className="card card-pad">
             <form action={async (formData) => {
               "use server";
-              const name = formData.get("name") as string;
+              const name = String(formData.get("name") ?? "").trim();
+              if (!name) return;
               await db.update(schema.users)
                 .set({ name })
                 .where(eq(schema.users.id, user.id));
@@ -49,6 +50,10 @@ export default async function SettingsPage() {
                 </div>
               </label>
               <p className="tiny muted" style={{ marginTop: 8 }}>
+                This is the name shown on checks you record. If it is blank, your
+                email address is used instead.
+              </p>
+              <p className="tiny muted">
                 {membership?.role === "owner"
                   ? "You are the firm administrator."
                   : `Your email (${user.email}) is managed by your firm administrator.`}

@@ -22,7 +22,6 @@ interface Payload {
   itemKey: string;
   result: Result;
   note: string;
-  performedBy: string;
   happenedAt: string;
   photo: Blob | null;
   raiseAction: boolean;
@@ -35,7 +34,6 @@ function toFormData(p: Payload): FormData {
   fd.set("itemKey", p.itemKey);
   fd.set("result", p.result);
   fd.set("note", p.note);
-  fd.set("performedBy", p.performedBy);
   fd.set("happenedAt", p.happenedAt);
   if (p.photo) fd.set("photo", p.photo, "evidence.jpg");
   if (p.result === "fail" && p.raiseAction) {
@@ -56,7 +54,6 @@ async function sendPayload(p: Payload): Promise<boolean> {
 
 const DB_NAME = "firelogbook";
 const STORE = "pending";
-const NAME_KEY = "flb.name";
 
 /* ---------------- local offline queue ---------------- */
 
@@ -139,7 +136,6 @@ export default function CheckForm(props: Props) {
 
   const [result, setResult] = useState<Result>("pass");
   const [note, setNote] = useState("");
-  const [who, setWho] = useState("");
   const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
   const [raiseAction, setRaiseAction] = useState(true);
   const [actionDue, setActionDue] = useState("");
@@ -148,12 +144,6 @@ export default function CheckForm(props: Props) {
   const [savedOffline, setSavedOffline] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(NAME_KEY);
-    if (saved) {
-      setWho(saved);
-    } else if (props.userName) {
-      setWho(props.userName);
-    }
     const inSeven = new Date(Date.now() + 7 * 86_400_000);
     setActionDue(inSeven.toISOString().slice(0, 10));
 
@@ -176,7 +166,6 @@ export default function CheckForm(props: Props) {
       itemKey: props.itemKey,
       result,
       note: note.trim(),
-      performedBy: who.trim(),
       happenedAt: new Date().toISOString(),
       photo: photo?.blob ?? null,
       raiseAction,
@@ -188,17 +177,12 @@ export default function CheckForm(props: Props) {
     e.preventDefault();
     setError(null);
 
-    if (!who.trim()) {
-      setError("Add your name so the record shows who checked it.");
-      return;
-    }
     if (result === "fail" && note.trim().length < 5) {
       setError("A failed check needs a note describing the fault.");
       return;
     }
 
     setBusy(true);
-    if (who.trim()) localStorage.setItem(NAME_KEY, who.trim());
 
     const payload = buildPayload();
     try {
@@ -394,16 +378,25 @@ export default function CheckForm(props: Props) {
           )}
         </div>
 
-        <label className="field">
-          <span className="label">Checked by</span>
-          <input
-            className="input"
-            value={who}
-            onChange={(e) => setWho(e.target.value)}
-            placeholder="Your name"
-            autoComplete="name"
-          />
-        </label>
+        <div className="field">
+          <span className="label">Recorded by</span>
+          <p
+            className="small"
+            style={{
+              fontWeight: 600,
+              padding: "10px 12px",
+              border: "1px solid var(--line)",
+              borderRadius: 8,
+              background: "var(--bg-2, #f7f7f5)",
+            }}
+          >
+            {props.userName}
+          </p>
+          <p className="tiny muted" style={{ marginTop: 4 }}>
+            This check is attributed to your signed-in account. Change your name
+            in Settings.
+          </p>
+        </div>
 
         {error && (
           <p className="small" style={{ color: "var(--bad)", fontWeight: 550 }}>

@@ -48,7 +48,7 @@ export default async function CheckPage({
         reference={item.ref}
         frequencyLabel={FREQUENCIES[item.frequency as keyof typeof FREQUENCIES].label}
         lastSummary={lastSummary}
-        userName={user.name}
+        userName={user.name.trim() || user.email}
       />
     </div>
   );

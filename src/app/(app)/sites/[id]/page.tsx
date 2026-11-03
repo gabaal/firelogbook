@@ -18,7 +18,7 @@ export default async function SitePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { firm } = await requireActiveFirm();
+  const { firm, membership } = await requireActiveFirm();
   const site = await getSite(firm.id, id);
   if (!site) notFound();
 
@@ -52,14 +52,20 @@ export default async function SitePage({
             Responsible person · {site.responsible_person}
             {site.responsible_email ? ` · reminders to ${site.responsible_email}` : ""}
             {site.remind_opt_out ? " · reminders off" : ""}
-            {" "}
-            <SiteDetailsEditor
-              siteId={site.id}
-              responsiblePerson={site.responsible_person}
-              responsibleEmail={site.responsible_email ?? ""}
-              workingDays={site.working_days}
-            />
           </p>
+          {(membership.role === "owner" || membership.role === "admin") && (
+            <div className="no-print" style={{ marginTop: 8 }}>
+              <SiteDetailsEditor
+                siteId={site.id}
+                name={site.name}
+                address={site.address}
+                postcode={site.postcode}
+                responsiblePerson={site.responsible_person}
+                responsibleEmail={site.responsible_email ?? ""}
+                workingDays={site.working_days}
+              />
+            </div>
+          )}
         </div>
           <div className="row" style={{ gap: 8 }}>
             <Link href={`/sites/${site.id}/checklist`} className="btn btn-sm">

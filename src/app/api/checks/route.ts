@@ -39,12 +39,15 @@ export async function POST(req: NextRequest) {
   const itemKey = String(form.get("itemKey") ?? "");
   const result = String(form.get("result") ?? "");
   const note = String(form.get("note") ?? "").slice(0, 2000).trim();
-  const performedBy = String(form.get("performedBy") ?? "").slice(0, 80).trim();
   const happenedAt = safeTimestamp(form.get("happenedAt") as string | null);
 
   const session = await getSession();
   if (!session) return bad("Sign in first", 401);
   if (!firmIsActive(session.firm)) return bad("Subscription required", 402);
+
+  // Attribute the record to the signed-in account, never to a name the client
+  // supplies — that is what makes multi-user logs trustworthy.
+  const performedBy = session.user.name.trim() || session.user.email;
 
   const site = await getSite(session.firm.id, siteId);
   if (!site) return bad("Unknown site", 404);
@@ -53,7 +56,6 @@ export async function POST(req: NextRequest) {
   const item = checklist.find(i => i.key === itemKey);
   if (!item) return bad("Unknown check", 422);
   if (!RESULTS.has(result)) return bad("Unknown result", 422);
-  if (!performedBy) return bad("A name is required", 422);
   if (result === "fail" && note.length < 5)
     return bad("A failed check needs a note", 422);
 
