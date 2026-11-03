@@ -54,11 +54,12 @@ export async function rateLimit(
   };
 }
 
-/** The client address Vercel's edge records for the request. */
+/** The client address Vercel records for the request. Prefer x-real-ip: it is
+ * set by the edge and cannot be chosen by the caller. */
 export function clientIp(req: Request): string {
   return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "local"
   );
 }
