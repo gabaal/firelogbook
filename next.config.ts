@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "12mb" },
   },
+  async rewrites() {
+    // Serve the standalone setup manual at /help without exposing its
+    // filename. The file lives in public/ so it ships untouched.
+    return [{ source: "/help", destination: "/help.html" }];
+  },
 };
 
 export default nextConfig;

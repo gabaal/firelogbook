@@ -62,6 +62,10 @@ export default function RootLayout({
                 Free printable log book
               </Link>{" "}
               ·{" "}
+              <Link href="/help" style={{ textDecoration: "underline" }}>
+                Setup guide
+              </Link>{" "}
+              ·{" "}
               <Link href="/privacy" style={{ textDecoration: "underline" }}>
                 Privacy
               </Link>{" "}
