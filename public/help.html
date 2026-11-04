@@ -166,9 +166,17 @@
     border-radius: 0 4px 4px 0;
   }
   .toc a:hover { color: var(--ink); background: var(--paper-2); border-left-color: var(--line-2); }
+  .toc a.active {
+    color: var(--ember);
+    background: var(--ember-wash);
+    border-left-color: var(--ember);
+    font-weight: 650;
+  }
 
   .doc { max-width: 68ch; }
   .lede { color: var(--ink-2); font-size: 1.02rem; }
+
+  .step { scroll-margin-top: 20px; }
 
   /* -------------------------------- steps ------------------------------- */
   .step { padding-block: 30px; border-top: 1px solid var(--line); }
@@ -311,6 +319,7 @@
     .toc { position: static; margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
     .toc ol { display: flex; flex-wrap: wrap; gap: 4px; }
     .toc a { border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; }
+    .toc a.active { border-color: var(--ember); }
     .model { grid-template-columns: 1fr; }
     .model-arrow { display: none; }
   }
@@ -670,7 +679,7 @@
     </section>
 
     <footer class="footer">
-      <span>FireLogbook · fire safety records for small sites</span>
+      <span>FireLogbook · fire safety records for small sites.</span>
       <span>This records what was checked. It is not a fire risk assessment.</span>
     </footer>
   </main>
@@ -718,6 +727,64 @@
       });
     });
     updateCount();
+  })();
+
+  /* Highlight the contents entry for the section currently being read. */
+  (function () {
+    var links = Array.prototype.slice.call(
+      document.querySelectorAll(".toc a[href^='#']"),
+    );
+    if (!links.length) return;
+
+    var targets = links.map(function (link) {
+      return document.getElementById(link.getAttribute("href").slice(1));
+    });
+    var current = -1;
+
+    function setActive(index) {
+      if (index === current) return;
+      current = index;
+      links.forEach(function (link, i) {
+        var on = i === index;
+        link.classList.toggle("active", on);
+        if (on) link.setAttribute("aria-current", "true");
+        else link.removeAttribute("aria-current");
+      });
+    }
+
+    function update() {
+      // A heading counts as current once it crosses a line a fifth of the way
+      // down the viewport, rather than the very top edge.
+      var marker = window.innerHeight * 0.2;
+      var index = 0;
+      for (var i = 0; i < targets.length; i++) {
+        var section = targets[i];
+        if (section && section.getBoundingClientRect().top <= marker) {
+          index = i;
+        }
+      }
+      // The last section is often shorter than the viewport, so it never
+      // reaches the marker. Make it current at the bottom of the page.
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        index = links.length - 1;
+      }
+      setActive(index);
+    }
+
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(function () {
+        ticking = false;
+        update();
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    window.addEventListener("hashchange", update);
+    update();
   })();
 </script>
 
