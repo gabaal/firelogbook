@@ -8,11 +8,13 @@ export default function InviteForm({ firmId }: { firmId: string }) {
   const [role, setRole] = useState("member");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     try {
       const res = await fetch("/api/invites", {
@@ -21,13 +23,17 @@ export default function InviteForm({ firmId }: { firmId: string }) {
         body: JSON.stringify({ email, role }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to send invitation");
       }
 
       setEmail("");
-      alert("Invitation sent successfully!");
+      setNotice(
+        data.mode === "outbox"
+          ? `Invitation queued in the Outbox for ${email}.`
+          : `Invitation sent to ${email}.`,
+      );
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -63,6 +69,7 @@ export default function InviteForm({ firmId }: { firmId: string }) {
         )}
       </button>
       {error && <span style={{ color: "var(--bad)", fontSize: 12, marginLeft: 8 }}>{error}</span>}
+      {notice && <span style={{ color: "var(--ok)", fontSize: 12, marginLeft: 8 }}>{notice}</span>}
     </form>
   );
 }
