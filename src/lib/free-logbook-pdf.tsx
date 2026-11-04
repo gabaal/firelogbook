@@ -10,6 +10,7 @@ import {
 import type { LeadRow } from "./db";
 import { CHECKLIST, FREQUENCIES } from "./checklist";
 import { fmtLongDate } from "./format";
+import { publicHost } from "./brand";
 
 function short(text: string): string {
   const first = text.split(". ")[0];
@@ -70,8 +71,9 @@ function BlankRows({
 
 function Footer({ name }: { name: string }) {
   return (
-    <View fixed style={styles.footer}>
-      <Text>FireLogbook · {name}</Text>
+    <View style={styles.footer}>
+      <Text>{name}</Text>
+      <Text>FireLogbook · {publicHost()}</Text>
       <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
@@ -189,6 +191,10 @@ function FreeLogbookDocument({ lead, started }: { lead: LeadRow; started: Date }
             fire risk assessment, and keeping it does not by itself make the
             premises compliant. The responsible person remains responsible for
             fire safety.
+          </Text>
+          <Text style={styles.credit}>
+            Free blank log book made at {publicHost()} — print as many copies as
+            you need.
           </Text>
         </View>
         <Footer name={lead.site_name} />
@@ -309,9 +315,10 @@ function FreeLogbookDocument({ lead, started }: { lead: LeadRow; started: Date }
 
         <View style={styles.finalNote}>
           <Text style={styles.noteText}>
-            Free blank log book from FireLogbook. If you would rather the logbook
-            filled itself in, chased what was overdue and produced the audit pack
-            for you, that is what the account version does.
+            Free blank log book from FireLogbook — {publicHost()}. If you would
+            rather the logbook filled itself in, chased what was overdue and
+            produced the audit pack for you, that is what the account version
+            does.
           </Text>
         </View>
         <Footer name={lead.site_name} />
@@ -374,6 +381,7 @@ const styles = StyleSheet.create({
   },
   noteText: { fontSize: 9, color: "#333" },
   disclaimer: { fontSize: 7.5, color: "#777", marginTop: 18, maxWidth: "92%" },
+  credit: { fontSize: 7.5, color: "#888", marginTop: 6 },
   h2: { fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 8 },
   sub: { fontSize: 8.5, color: "#666", marginBottom: 10 },
   bulletRow: { flexDirection: "row", marginBottom: 5 },

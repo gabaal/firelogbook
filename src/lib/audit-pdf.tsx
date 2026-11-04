@@ -11,6 +11,7 @@ import {
 import type { ActionRow, CheckRow, SiteRow } from "./db";
 import { CHECKLIST, DISCLAIMER, FREQUENCIES } from "./checklist";
 import { fmtDate, fmtLongDate, fmtTime } from "./format";
+import { publicHost } from "./brand";
 
 const DAY = 86_400_000;
 
@@ -96,6 +97,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 
 function AuditDocument(input: AuditPdfInput) {
   const { site, from, to, checks, actions, everRecorded, photoData } = input;
+  const host = publicHost();
   const periodDays = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY) + 1);
 
   const summaryRows = CHECKLIST.map((item) => {
@@ -143,6 +145,7 @@ function AuditDocument(input: AuditPdfInput) {
               {fmtDate(from)} — {fmtDate(to)}
             </Text>
             <Text style={styles.muted}>Generated {fmtDate(new Date())}</Text>
+            <Text style={styles.muted}>Prepared with FireLogbook · {host}</Text>
           </View>
         </View>
 
@@ -323,10 +326,13 @@ function AuditDocument(input: AuditPdfInput) {
           </View>
         </View>
 
-        <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
+        <Text style={styles.disclaimer}>
+          {DISCLAIMER} Generated with FireLogbook — {host}.
+        </Text>
 
         <View fixed style={styles.footer}>
-          <Text>FireLogbook · {site.name}</Text>
+          <Text>{site.name}</Text>
+          <Text>FireLogbook · {host}</Text>
           <Text
             render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
           />
