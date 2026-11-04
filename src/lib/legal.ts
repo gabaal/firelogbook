@@ -5,7 +5,7 @@
 export const LEGAL = {
   tradingName: "FireLogbook",
   operator: "Gerald Baalham",
-  contactEmail: "geraldbaalham@live.co.uk",
+  contactEmail: "admin@firelogbook.co.uk",
   address: "",
   jurisdiction: "England and Wales",
   updated: "3 November 2026",
