@@ -2,18 +2,31 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Flame, Check } from "@/components/icons";
 import FreeLogbookForm from "@/components/FreeLogbookForm";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
+
+const TITLE = "Free fire safety log book — print one in a minute";
+const DESCRIPTION =
+  "A printable fire safety log book with the thirteen checks an inspector asks for. Free, no account, filled in with your premises details.";
 
 export const metadata: Metadata = {
-  title: "Free fire safety log book — print one in a minute",
-  description:
-    "A printable fire safety log book with the thirteen checks an inspector asks for. Free, no account, filled in with your premises details.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/free-logbook" },
   openGraph: {
-    title: "Free fire safety log book — print one in a minute",
+    title: TITLE,
     description:
       "The thirteen checks an inspector asks for, laid out for a full year, with your premises details on the cover. Free A4 PDF.",
     url: "/free-logbook",
     type: "website",
+    siteName: SITE_NAME,
+    locale: "en_GB",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 

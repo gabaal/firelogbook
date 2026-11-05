@@ -2,18 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import { LEGAL } from "@/lib/legal";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
+
+const DESCRIPTION =
+  "What FireLogbook collects, why, who processes it, how long we keep it, and how to exercise your UK data rights.";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
-  description:
-    "What FireLogbook collects, why, who processes it, how long we keep it, and how to exercise your UK data rights.",
+  description: DESCRIPTION,
   alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy policy",
-    description:
-      "What FireLogbook collects, why, who processes it, and how to exercise your UK data rights.",
+    description: DESCRIPTION,
     url: "/privacy",
     type: "website",
+    siteName: SITE_NAME,
+    locale: "en_GB",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy policy",
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 

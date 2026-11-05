@@ -23,6 +23,8 @@ export default function robots(): MetadataRoute.Robots {
           "/lead-unsubscribe",
           // The printable log book itself is per-lead; the form is public.
           "/free-logbook/",
+          // /help serves this file; keep the raw filename out of the index.
+          "/help.html",
           "/auth/",
           "/api/",
         ],

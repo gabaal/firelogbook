@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Flame } from "@/components/icons";
 import DemoButton from "@/components/DemoButton";
+import { baseUrl } from "@/lib/mail";
 
 export const metadata: Metadata = {
   title: { absolute: "FireLogbook — the fire safety logbook for small sites" },
@@ -18,8 +19,54 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const base = baseUrl();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${base}/#organization`,
+        name: "FireLogbook",
+        url: base,
+        logo: `${base}/icon`,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${base}/#website`,
+        url: base,
+        name: "FireLogbook",
+        inLanguage: "en-GB",
+        publisher: { "@id": `${base}/#organization` },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "FireLogbook",
+        applicationCategory: "BusinessApplication",
+        applicationSubCategory: "Fire safety logbook",
+        operatingSystem: "Web",
+        url: base,
+        description:
+          "Record fire safety checks on a phone, chase overdue checks, and generate a dated audit pack for an inspector.",
+        inLanguage: "en-GB",
+        publisher: { "@id": `${base}/#organization` },
+        offers: {
+          "@type": "Offer",
+          price: "29.00",
+          priceCurrency: "GBP",
+          description: "£29 per site per month after a 14-day free trial",
+          url: `${base}/signin`,
+        },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <header className="topbar">
         <div className="shell topbar-in">
           <Link href="/" className="brand">
@@ -85,7 +132,7 @@ export default function Home() {
             },
           ].map((f) => (
             <div className="card card-pad" key={f.t}>
-              <h3 className="h-sec">{f.t}</h3>
+              <h2 className="h-sec">{f.t}</h2>
               <p className="small" style={{ color: "var(--ink-2)", marginTop: 8 }}>
                 {f.d}
               </p>

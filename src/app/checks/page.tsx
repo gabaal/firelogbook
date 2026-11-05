@@ -4,26 +4,76 @@ import { ArrowRight } from "@/components/icons";
 import PublicHeader from "@/components/PublicHeader";
 import { CHECKLIST, FREQUENCIES, type Frequency } from "@/lib/checklist";
 import { baseUrl } from "@/lib/mail";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
+
+const DESCRIPTION =
+  "The 13 fire safety checks a small site needs — daily, weekly, monthly, quarterly and annual — with what to look for and what to record.";
 
 export const metadata: Metadata = {
   title: "The 13 fire safety checks for small sites",
-  description:
-    "Every fire safety check a small site needs: exit doors and the alarm panel daily, call points and emergency lighting weekly, extinguishers, fire doors and escape routes monthly, drills quarterly, and services and training annually.",
+  description: DESCRIPTION,
   alternates: { canonical: "/checks" },
   openGraph: {
     title: "The 13 fire safety checks for small sites",
-    description:
-      "What to check, how often, and what to write down — the full fire safety checklist for small sites.",
+    description: DESCRIPTION,
     url: `${baseUrl()}/checks`,
     type: "website",
+    siteName: SITE_NAME,
+    locale: "en_GB",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The 13 fire safety checks for small sites",
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 
 const ORDER: Frequency[] = ["daily", "weekly", "monthly", "quarterly", "annual"];
 
 export default function ChecksIndexPage() {
+  const base = baseUrl();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "FireLogbook",
+            item: base,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "The 13 checks",
+            item: `${base}/checks`,
+          },
+        ],
+      },
+      {
+        "@type": "ItemList",
+        name: "The 13 fire safety checks for small sites",
+        itemListElement: CHECKLIST.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.title,
+          url: `${base}/checks/${item.key}`,
+        })),
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <PublicHeader />
 
       <section className="shell section" style={{ maxWidth: 980, paddingTop: 44 }}>

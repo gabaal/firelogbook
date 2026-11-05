@@ -11,6 +11,7 @@ import {
 } from "@/lib/checklist";
 import { CHECK_SEO, FREQUENCY_NOTE } from "@/lib/check-seo";
 import { baseUrl } from "@/lib/mail";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
 
 export const dynamicParams = false;
 
@@ -27,7 +28,7 @@ export async function generateMetadata({
   const item = ITEMS_BY_KEY[key];
   if (!item) return { title: "Check not found" };
 
-  const description = `${item.guidance} How often to do it, what to record, and the standard behind it (${item.ref}).`;
+  const description = `${item.title} — what to check, how often it is due, what to record, and the standard behind it (${item.ref}).`;
   return {
     title: `${item.title} — how often and what to record`,
     description,
@@ -37,6 +38,15 @@ export async function generateMetadata({
       description,
       url: `${baseUrl()}/checks/${item.key}`,
       type: "article",
+      siteName: SITE_NAME,
+      locale: "en_GB",
+      images: [OG_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: item.title,
+      description,
+      images: [OG_IMAGE],
     },
   };
 }
@@ -67,6 +77,11 @@ export default async function CheckLandingPage({
         about: item.ref,
         isPartOf: {
           "@type": "WebSite",
+          name: "FireLogbook",
+          url: baseUrl(),
+        },
+        publisher: {
+          "@type": "Organization",
           name: "FireLogbook",
           url: baseUrl(),
         },

@@ -3,18 +3,29 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import { DISCLAIMER } from "@/lib/checklist";
 import { LEGAL } from "@/lib/legal";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
+
+const DESCRIPTION =
+  "The terms for using FireLogbook: trial, subscription, billing, cancellation, acceptable use, liability and governing law.";
 
 export const metadata: Metadata = {
   title: "Terms of service",
-  description:
-    "The terms for using FireLogbook: trial, subscription, billing, cancellation, acceptable use, liability and governing law.",
+  description: DESCRIPTION,
   alternates: { canonical: "/terms" },
   openGraph: {
     title: "Terms of service",
-    description:
-      "The terms for using FireLogbook: trial, subscription, billing, cancellation and liability.",
+    description: DESCRIPTION,
     url: "/terms",
     type: "website",
+    siteName: SITE_NAME,
+    locale: "en_GB",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms of service",
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 

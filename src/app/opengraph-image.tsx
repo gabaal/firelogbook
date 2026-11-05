@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { baseUrl } from "@/lib/mail";
 
 export const alt =
   "FireLogbook — the fire safety logbook for small sites, with a dated audit pack";
@@ -6,6 +7,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function Image() {
+  const host = new URL(baseUrl()).host;
+
   return new ImageResponse(
     (
       <div
@@ -61,7 +64,7 @@ export default function Image() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#78716c" }}>
-          <span>firelogbook.vercel.app</span>
+          <span>{host}</span>
           <span>13 checks · reminders · PDF audit pack</span>
         </div>
       </div>
